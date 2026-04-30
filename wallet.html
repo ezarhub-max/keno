@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <meta name="theme-color" content="#0f0c29">
     <title>Wallet - Horse Racing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -55,18 +54,10 @@
             color: white;
             text-decoration: none;
             font-size: 0.85rem;
-            transition: all 0.2s ease;
         }
         
-        .back-btn:active {
-            transform: scale(0.95);
-        }
+        .container { padding: 0; }
         
-        .container {
-            padding: 0;
-        }
-        
-        /* Cards */
         .card {
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
@@ -94,7 +85,6 @@
             color: #ffc107;
         }
         
-        /* Balance Display */
         .balance-card {
             text-align: center;
             background: linear-gradient(135deg, rgba(40,167,69,0.2), rgba(32,201,151,0.2));
@@ -105,7 +95,6 @@
             font-weight: 800;
             color: #28a745;
             font-family: monospace;
-            letter-spacing: -1px;
         }
         
         .last-updated {
@@ -124,14 +113,8 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
         }
         
-        .refresh-btn:active {
-            transform: rotate(180deg);
-        }
-        
-        /* Stats Row */
         .stats-row {
             display: flex;
             gap: 12px;
@@ -149,7 +132,6 @@
         .stat-label {
             font-size: 0.7rem;
             color: rgba(255,255,255,0.6);
-            margin-bottom: 4px;
         }
         
         .stat-value {
@@ -158,7 +140,6 @@
             color: #ffc107;
         }
         
-        /* Tab Navigation */
         .tab-nav {
             display: flex;
             gap: 8px;
@@ -175,34 +156,21 @@
             font-weight: 600;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s ease;
         }
         
         .tab-btn.active {
             background: linear-gradient(135deg, #ffc107, #ff9800);
             color: #1a1a2e;
-            border-color: transparent;
         }
         
-        .tab-btn:active {
-            transform: scale(0.97);
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Form Elements */
         .form-label {
             color: rgba(255,255,255,0.8);
             font-size: 0.8rem;
@@ -221,16 +189,9 @@
         .form-control:focus, .form-select:focus {
             background: rgba(0,0,0,0.4);
             border-color: #ffc107;
-            box-shadow: 0 0 0 3px rgba(255,193,7,0.2);
-            color: white;
             outline: none;
         }
         
-        .form-control::placeholder {
-            color: rgba(255,255,255,0.4);
-        }
-        
-        /* Amount Buttons */
         .amount-buttons {
             display: flex;
             gap: 8px;
@@ -249,33 +210,15 @@
             font-weight: 600;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s ease;
         }
         
-        .amount-btn:active {
-            transform: scale(0.95);
-            background: rgba(255,255,255,0.25);
-        }
-        
-        /* Buttons */
         .btn-primary {
             background: linear-gradient(135deg, #28a745, #20c997);
             border: none;
             border-radius: 40px;
             padding: 14px;
             font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.2s ease;
             width: 100%;
-        }
-        
-        .btn-primary:active {
-            transform: scale(0.97);
-        }
-        
-        .btn-primary:disabled {
-            opacity: 0.5;
-            transform: none;
         }
         
         .btn-warning {
@@ -288,16 +231,6 @@
             width: 100%;
         }
         
-        .btn-secondary {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            border-radius: 40px;
-            padding: 14px;
-            font-weight: 600;
-            color: white;
-        }
-        
-        /* Telebirr Info Card */
         .telebirr-info {
             background: linear-gradient(135deg, #0066CC, #003399);
             border-radius: 20px;
@@ -309,7 +242,6 @@
         .telebirr-number {
             font-size: 1.8rem;
             font-weight: bold;
-            letter-spacing: 2px;
             background: rgba(255,255,255,0.2);
             display: inline-block;
             padding: 8px 20px;
@@ -327,7 +259,6 @@
             margin-left: 10px;
         }
         
-        /* Pending Requests */
         .request-item {
             background: rgba(0,0,0,0.3);
             border-radius: 16px;
@@ -336,67 +267,27 @@
             border-left: 3px solid #ffc107;
         }
         
-        .request-status {
-            font-size: 0.7rem;
-            padding: 3px 10px;
-            border-radius: 20px;
-        }
-        
         .status-pending {
             background: rgba(255,193,7,0.2);
             color: #ffc107;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
         }
         
         .status-approved {
             background: rgba(40,167,69,0.2);
             color: #28a745;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
         }
         
-        .status-rejected {
-            background: rgba(220,53,69,0.2);
-            color: #dc3545;
-        }
-        
-        /* Modal Styles */
-        .modal-content {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        
-        .modal-header, .modal-body, .modal-footer {
-            border-color: rgba(255,255,255,0.1);
-        }
-        
-        .modal-title, .modal-body {
-            color: white;
-        }
-        
-        .modal-title i {
-            color: #ffc107;
-            margin-right: 8px;
-        }
-        
-        .timer-display {
-            font-size: 2rem;
-            font-weight: bold;
-            text-align: center;
-            color: #ffc107;
-            font-family: monospace;
-            margin: 10px 0;
-        }
-        
-        /* Withdrawal Requirements */
         .requirement-card {
             background: rgba(255,255,255,0.08);
             border-radius: 20px;
             padding: 16px;
             margin-bottom: 16px;
-        }
-        
-        .requirement-card h6 {
-            color: white;
-            margin-bottom: 12px;
         }
         
         .requirement-item {
@@ -418,27 +309,6 @@
             border-left: 3px solid #dc3545;
         }
         
-        .requirement-icon {
-            font-size: 1.3rem;
-            min-width: 36px;
-            text-align: center;
-        }
-        
-        .requirement-content {
-            flex: 1;
-        }
-        
-        .requirement-title {
-            color: white;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        
-        .requirement-status {
-            font-size: 0.7rem;
-            color: rgba(255,255,255,0.6);
-        }
-        
         .progress {
             height: 4px;
             background: rgba(255,255,255,0.2);
@@ -450,43 +320,26 @@
             border-radius: 2px;
         }
         
-        /* Alert Messages */
         .alert {
             border-radius: 16px;
             padding: 12px 16px;
             font-size: 0.8rem;
             margin-top: 12px;
-            margin-bottom: 0;
         }
         
-        .alert-success {
-            background: rgba(40,167,69,0.2);
-            border: 1px solid rgba(40,167,69,0.3);
-            color: #28a745;
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.2);
         }
         
-        .alert-warning {
-            background: rgba(255,193,7,0.2);
-            border: 1px solid rgba(255,193,7,0.3);
-            color: #ffc107;
-        }
-        
-        .alert-info {
-            background: rgba(23,162,184,0.2);
-            border: 1px solid rgba(23,162,184,0.3);
-            color: #17a2b8;
-        }
-        
-        .text-uppercase-input {
-            text-transform: uppercase;
+        .modal-title, .modal-body {
+            color: white;
         }
         
         @media (max-width: 380px) {
             .balance-amount { font-size: 2.5rem; }
-            .stat-value { font-size: 1rem; }
-            .timer-display { font-size: 1.5rem; }
             .telebirr-number { font-size: 1.2rem; }
-            .amount-btn { min-width: 60px; font-size: 0.8rem; }
         }
     </style>
 </head>
@@ -508,7 +361,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="card-title"><i class="fas fa-coins"></i> Total Balance</span>
                     <div class="refresh-btn" onclick="refreshAll()">
-                        <i class="fas fa-sync-alt" style="color: white; font-size: 0.9rem;"></i>
+                        <i class="fas fa-sync-alt" style="color: white;"></i>
                     </div>
                 </div>
                 <div class="balance-amount text-center" id="balance">$0.00</div>
@@ -539,11 +392,10 @@
 
         <!-- Deposit Tab -->
         <div id="depositTab" class="tab-content active">
-            <!-- Telebirr Payment Info -->
             <div class="telebirr-info">
                 <i class="fas fa-mobile-alt" style="font-size: 1.5rem;"></i>
                 <h6 class="mt-2">Send Money via Telebirr</h6>
-                <div class="telebirr-number" id="telebirrNumber">0933193025</div>
+                <div class="telebirr-number">0933193025</div>
                 <button class="copy-btn" onclick="copyTelebirrNumber()">
                     <i class="fas fa-copy"></i> Copy Number
                 </button>
@@ -554,33 +406,29 @@
                 <div class="card-body">
                     <div class="card-title"><i class="fas fa-plus-circle"></i> Request Deposit</div>
                     
-                    <!-- Deposit Amount -->
                     <div class="mb-3">
-                        <label for="depositAmount" class="form-label">Amount ($)</label>
-                        <input type="number" class="form-control" id="depositAmount" 
-                               placeholder="Enter amount" min="10" step="10">
-                        <div class="info-text mt-1" style="color: rgba(255,255,255,0.4); font-size:0.7rem;">
-                            Minimum deposit: $10
-                        </div>
+                        <label class="form-label">Amount ($)</label>
+                        <input type="number" class="form-control" id="depositAmount" placeholder="Enter amount" min="10" step="10">
                     </div>
                     
-                    <!-- Quick Amount Buttons -->
                     <div class="amount-buttons">
                         <div class="amount-btn" onclick="setAmount(10)">$10</div>
                         <div class="amount-btn" onclick="setAmount(20)">$20</div>
                         <div class="amount-btn" onclick="setAmount(50)">$50</div>
                         <div class="amount-btn" onclick="setAmount(100)">$100</div>
-                        <div class="amount-btn" onclick="setAmount(200)">$200</div>
-                        <div class="amount-btn" onclick="setAmount(500)">$500</div>
                     </div>
                     
-                    <button class="btn-primary mt-3" onclick="openTransactionModal()">
+                    <div class="mb-3 mt-3">
+                        <label class="form-label">Transaction ID</label>
+                        <input type="text" class="form-control" id="transactionId" placeholder="Enter your Telebirr transaction ID">
+                    </div>
+                    
+                    <button class="btn-primary mt-2" onclick="submitDeposit()">
                         <i class="fas fa-paper-plane"></i> Submit Deposit Request
                     </button>
                 </div>
             </div>
             
-            <!-- Pending Deposit Requests -->
             <div class="card">
                 <div class="card-body">
                     <div class="card-title"><i class="fas fa-clock"></i> Pending Requests</div>
@@ -590,7 +438,6 @@
                 </div>
             </div>
             
-            <!-- Deposit History -->
             <div class="card">
                 <div class="card-body">
                     <div class="card-title"><i class="fas fa-history"></i> Deposit History</div>
@@ -603,54 +450,40 @@
 
         <!-- Withdraw Tab -->
         <div id="withdrawTab" class="tab-content">
-            <!-- Withdrawal Requirements -->
             <div class="requirement-card">
                 <h6><i class="fas fa-check-circle"></i> Withdrawal Requirements</h6>
-                <div id="referralRequirement" class="requirement-item not-met">
-                    <div class="requirement-icon" id="referralIcon">⭕</div>
+                <div id="referralReq" class="requirement-item not-met">
+                    <div class="requirement-icon">⭕</div>
                     <div class="requirement-content">
                         <div class="d-flex justify-content-between">
-                            <span class="requirement-title">Referrals</span>
-                            <span class="requirement-status" id="referralStatus">0/10</span>
+                            <span class="requirement-title">Referrals (Need 10)</span>
+                            <span id="referralStatus">0/10</span>
                         </div>
-                        <div class="progress">
-                            <div class="progress-bar bg-success" id="referralProgressBar" style="width: 0%"></div>
-                        </div>
-                        <div class="info-text" id="referralProgress">0 of 10 referrals</div>
+                        <div class="progress"><div class="progress-bar bg-success" id="referralBar" style="width: 0%"></div></div>
                     </div>
                 </div>
                 
-                <div id="timeRequirement" class="requirement-item not-met">
-                    <div class="requirement-icon" id="timeIcon">⏳</div>
+                <div id="timeReq" class="requirement-item not-met">
+                    <div class="requirement-icon">⏳</div>
                     <div class="requirement-content">
                         <div class="d-flex justify-content-between">
-                            <span class="requirement-title">Time Waiting</span>
-                            <span class="requirement-status" id="timeStatus">0h/24h</span>
+                            <span class="requirement-title">24 Hours After Registration</span>
+                            <span id="timeStatus">0h/24h</span>
                         </div>
-                        <div class="progress">
-                            <div class="progress-bar bg-info" id="timeProgressBar" style="width: 0%"></div>
-                        </div>
-                        <div class="info-text" id="timeInfo">Waiting 24 hours after registration</div>
+                        <div class="progress"><div class="progress-bar bg-info" id="timeBar" style="width: 0%"></div></div>
                     </div>
                 </div>
                 
-                <div class="alert" id="requirementMessage" role="alert">
-                    ⏳ Complete ONE requirement to withdraw
-                </div>
+                <div class="alert" id="requirementMsg">⏳ Complete ONE requirement to withdraw</div>
             </div>
 
-            <!-- Withdrawal Form -->
             <div class="card">
                 <div class="card-body">
                     <div class="card-title"><i class="fas fa-money-bill-wave"></i> Request Withdrawal</div>
                     
                     <div class="mb-3">
-                        <label for="withdrawAmount" class="form-label">Amount ($)</label>
-                        <input type="number" class="form-control" id="withdrawAmount" 
-                               placeholder="Enter amount" min="10" step="10">
-                        <div class="info-text mt-1" style="color: rgba(255,255,255,0.4); font-size:0.7rem;">
-                            Minimum withdrawal: $10
-                        </div>
+                        <label class="form-label">Amount ($)</label>
+                        <input type="number" class="form-control" id="withdrawAmount" placeholder="Enter amount" min="10" step="10">
                     </div>
                     
                     <div class="amount-buttons">
@@ -661,63 +494,12 @@
                     </div>
                     
                     <div class="mb-3 mt-3">
-                        <label for="withdrawMethod" class="form-label">Withdrawal Method</label>
-                        <select class="form-select" id="withdrawMethod">
-                            <option value="telebirr">Telebirr</option>
-                            <option value="bank" disabled>Bank Transfer (Coming Soon)</option>
-                        </select>
-                    </div>
-                    
-                    <div id="telebirrWithdrawField" class="mb-3">
-                        <label for="withdrawTelebirr" class="form-label">Telebirr Number</label>
-                        <input type="tel" class="form-control" id="withdrawTelebirr" 
-                               placeholder="09XX XXX XXX">
+                        <label class="form-label">Telebirr Number</label>
+                        <input type="tel" class="form-control" id="withdrawTelebirr" placeholder="09XX XXX XXX">
                     </div>
                     
                     <button class="btn-warning" id="withdrawBtn" onclick="requestWithdrawal()" disabled>
                         <i class="fas fa-arrow-up"></i> Request Withdrawal
-                    </button>
-                    
-                    <div class="alert alert-info mt-3" style="font-size:0.75rem;">
-                        <i class="fas fa-clock"></i> Withdrawals processed within 48 hours
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Transaction ID Modal -->
-    <div class="modal fade" id="transactionModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-receipt"></i> Enter Transaction ID
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Send to: <strong style="color:#ffc107;">0933193025</strong></p>
-                    <p>Amount: <strong id="modalAmount" style="color:#ffc107;">$0</strong></p>
-                    <p style="font-size:0.85rem; color:rgba(255,255,255,0.7);">After sending, enter your Telebirr transaction ID:</p>
-                    
-                    <div class="timer-display" id="timerDisplay">30:00</div>
-                    <div class="timer-warning" id="timerWarning"></div>
-                    
-                    <div class="mb-3 mt-3">
-                        <label class="form-label">Transaction ID</label>
-                        <input type="text" class="form-control text-uppercase-input" id="transactionIdInput" 
-                               placeholder="TX123456789" style="text-transform: uppercase;"
-                               oninput="this.value = this.value.toUpperCase();">
-                        <div style="font-size:0.65rem; color:rgba(255,255,255,0.4); margin-top:5px;">
-                            Transaction ID will be automatically converted to UPPERCASE
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitDepositWithTransaction()">
-                        <i class="fas fa-check"></i> Submit Request
                     </button>
                 </div>
             </div>
@@ -726,16 +508,10 @@
 
     <script>
         const userPhone = localStorage.getItem('userPhone');
+        let balance = parseFloat(localStorage.getItem('userBalance')) || 0;
         let userCreatedAt = null;
-        let refreshInterval;
-        let timerInterval;
-        let timeLeft = 30 * 60;
-        let pendingAmount = 0;
-        let modal = null;
         
-        if (!userPhone) {
-            window.location.href = 'login.html';
-        }
+        if (!userPhone) window.location.href = 'login.html';
         
         function setAmount(amount) {
             document.getElementById('depositAmount').value = amount;
@@ -746,9 +522,8 @@
         }
         
         function copyTelebirrNumber() {
-            const number = document.getElementById('telebirrNumber').textContent;
-            navigator.clipboard.writeText(number);
-            alert('Telebirr number copied: ' + number);
+            navigator.clipboard.writeText('0933193025');
+            alert('Telebirr number copied: 0933193025');
         }
         
         function switchTab(tab) {
@@ -764,108 +539,81 @@
             }
         }
         
-        function openTransactionModal() {
+        async function submitDeposit() {
             const amount = parseFloat(document.getElementById('depositAmount').value);
+            const transactionId = document.getElementById('transactionId').value.trim();
             
             if (!amount || amount < 10) {
                 alert('Please enter a valid amount (minimum $10)');
                 return;
             }
             
-            pendingAmount = amount;
-            document.getElementById('modalAmount').textContent = `$${amount.toFixed(2)}`;
-            document.getElementById('transactionIdInput').value = '';
-            
-            timeLeft = 30 * 60;
-            updateTimerDisplay();
-            startTimer();
-            
-            if (!modal) {
-                modal = new bootstrap.Modal(document.getElementById('transactionModal'));
-            }
-            modal.show();
-        }
-        
-        function updateTimerDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            document.getElementById('timerDisplay').textContent = display;
-            
-            if (timeLeft <= 300) {
-                document.getElementById('timerDisplay').style.color = '#ff6b6b';
-                document.getElementById('timerWarning').innerHTML = '⚠️ Less than 5 minutes remaining!';
-            } else if (timeLeft <= 600) {
-                document.getElementById('timerDisplay').style.color = '#ffc107';
-                document.getElementById('timerWarning').innerHTML = '⏰ 10 minutes remaining';
-            } else {
-                document.getElementById('timerDisplay').style.color = '#ffc107';
-                document.getElementById('timerWarning').innerHTML = '';
-            }
-        }
-        
-        function startTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            
-            timerInterval = setInterval(() => {
-                if (timeLeft <= 1) {
-                    clearInterval(timerInterval);
-                    document.getElementById('timerDisplay').textContent = '00:00';
-                    if (modal) modal.hide();
-                    alert('⏰ Time expired! Please start a new deposit request.');
-                } else {
-                    timeLeft--;
-                    updateTimerDisplay();
-                }
-            }, 1000);
-        }
-        
-        async function submitDepositWithTransaction() {
-            let transactionId = document.getElementById('transactionIdInput').value.trim();
-            
             if (!transactionId) {
                 alert('Please enter your Transaction ID');
                 return;
             }
             
-            transactionId = transactionId.toUpperCase();
-            
-            const submitBtn = document.querySelector('#transactionModal .btn-primary');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-            
             try {
                 const response = await fetch('/deposit/request', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        phone: userPhone,
-                        amount: pendingAmount,
-                        transactionId: transactionId
-                    })
+                    body: JSON.stringify({ phone: userPhone, amount, transactionId })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    clearInterval(timerInterval);
-                    if (modal) modal.hide();
-                    
-                    alert(`✅ Deposit request submitted!\n\nAmount: $${pendingAmount.toFixed(2)}\nTransaction ID: ${transactionId}\n\nAdmin will approve within 24 hours.`);
-                    
+                    alert(`✅ Deposit request submitted!\nAmount: $${amount}\nTransaction ID: ${transactionId}\n\nAdmin will approve within 24 hours.`);
                     document.getElementById('depositAmount').value = '';
-                    loadDepositHistory();
+                    document.getElementById('transactionId').value = '';
                     loadPendingRequests();
+                    loadDepositHistory();
                 } else {
                     alert('❌ Error: ' + (data.error || 'Deposit request failed'));
                 }
             } catch (error) {
-                console.error('Deposit error:', error);
                 alert('❌ Network error. Please try again.');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+            }
+        }
+        
+        async function requestWithdrawal() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const telebirr = document.getElementById('withdrawTelebirr').value.trim();
+            
+            if (!amount || amount < 10) {
+                alert('Minimum withdrawal amount is $10');
+                return;
+            }
+            
+            if (amount > balance) {
+                alert('Insufficient balance');
+                return;
+            }
+            
+            if (!telebirr || telebirr.length < 9) {
+                alert('Please enter a valid Telebirr number');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/withdraw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: userPhone, amount, method: 'telebirr', account: telebirr })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`✅ Withdrawal request submitted!\nAmount: $${amount}\n\nProcessing within 48 hours.`);
+                    document.getElementById('withdrawAmount').value = '';
+                    document.getElementById('withdrawTelebirr').value = '';
+                    await loadBalance();
+                } else {
+                    alert('❌ Error: ' + (data.error || 'Withdrawal failed'));
+                }
+            } catch (error) {
+                alert('❌ Network error. Please try again.');
             }
         }
         
@@ -874,13 +622,12 @@
                 const response = await fetch(`/wallet/${userPhone}`);
                 const data = await response.json();
                 if (data.balance !== undefined) {
-                    document.getElementById('balance').textContent = `$${data.balance.toFixed(2)}`;
-                    localStorage.setItem('userBalance', data.balance);
+                    balance = data.balance;
+                    localStorage.setItem('userBalance', balance);
+                    document.getElementById('balance').textContent = `$${balance.toFixed(2)}`;
                     document.getElementById('lastUpdated').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
                 }
-            } catch (error) {
-                console.error('Balance error:', error);
-            }
+            } catch (error) {}
         }
         
         async function loadReferralInfo() {
@@ -888,15 +635,11 @@
                 const response = await fetch(`/user/referrals/${userPhone}`);
                 const data = await response.json();
                 if (data.success) {
-                    const count = parseInt(data.total_referrals) || 0;
-                    const bonus = parseFloat(data.total_bonus) || 0;
-                    document.getElementById('referralCount').textContent = count;
-                    document.getElementById('referralBonus').textContent = `$${bonus.toFixed(2)}`;
-                    updateReferralRequirement(count);
+                    document.getElementById('referralCount').textContent = data.total_referrals || 0;
+                    document.getElementById('referralBonus').textContent = `$${(data.total_bonus || 0).toFixed(2)}`;
+                    updateReferralRequirement(data.total_referrals || 0);
                 }
-            } catch (error) {
-                console.error('Referral error:', error);
-            }
+            } catch (error) {}
         }
         
         async function loadUserInfo() {
@@ -907,9 +650,7 @@
                     userCreatedAt = new Date(data.created_at);
                     updateTimeRequirement();
                 }
-            } catch (error) {
-                console.error('User info error:', error);
-            }
+            } catch (error) {}
         }
         
         async function loadDepositHistory() {
@@ -923,20 +664,16 @@
                     return;
                 }
                 
-                container.innerHTML = history.map(deposit => `
-                    <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px; margin-bottom: 8px;">
+                container.innerHTML = history.map(d => `
+                    <div class="request-item">
                         <div class="d-flex justify-content-between">
-                            <span>💰 $${parseFloat(deposit.amount).toFixed(2)}</span>
-                            <span class="status-${deposit.status} request-status">${deposit.status === 'approved' ? '✅ Approved' : deposit.status === 'rejected' ? '❌ Rejected' : '⏳ Pending'}</span>
+                            <span>💰 $${parseFloat(d.amount).toFixed(2)}</span>
+                            <span class="${d.status === 'approved' ? 'status-approved' : 'status-pending'}">${d.status === 'approved' ? '✅ Approved' : '⏳ Pending'}</span>
                         </div>
-                        <div style="font-size:0.65rem; color: rgba(255,255,255,0.5);">
-                            TX: ${deposit.transaction_id} | ${new Date(deposit.created_at).toLocaleDateString()}
-                        </div>
+                        <div style="font-size:0.7rem;">TX: ${d.transaction_id} | ${new Date(d.created_at).toLocaleDateString()}</div>
                     </div>
                 `).join('');
-            } catch (error) {
-                console.error('Deposit history error:', error);
-            }
+            } catch (error) {}
         }
         
         async function loadPendingRequests() {
@@ -954,16 +691,12 @@
                     <div class="request-item">
                         <div class="d-flex justify-content-between">
                             <span>💰 $${parseFloat(req.amount).toFixed(2)}</span>
-                            <span class="status-pending request-status">⏳ Pending Approval</span>
+                            <span class="status-pending">⏳ Pending Approval</span>
                         </div>
-                        <div style="font-size:0.7rem; color: rgba(255,255,255,0.5);">
-                            TX: ${req.transaction_id} | ${new Date(req.created_at).toLocaleString()}
-                        </div>
+                        <div style="font-size:0.7rem;">TX: ${req.transaction_id} | ${new Date(req.created_at).toLocaleString()}</div>
                     </div>
                 `).join('');
-            } catch (error) {
-                console.error('Pending requests error:', error);
-            }
+            } catch (error) {}
         }
         
         function updateReferralRequirement(count) {
@@ -972,128 +705,60 @@
             const met = count >= target;
             
             document.getElementById('referralStatus').textContent = `${count}/${target}`;
-            document.getElementById('referralProgress').textContent = `${count} of ${target} referrals`;
-            document.getElementById('referralProgressBar').style.width = `${progress}%`;
+            document.getElementById('referralBar').style.width = `${progress}%`;
             
-            const container = document.getElementById('referralRequirement');
+            const reqDiv = document.getElementById('referralReq');
             if (met) {
-                container.className = 'requirement-item met';
-                document.getElementById('referralIcon').textContent = '✅';
+                reqDiv.className = 'requirement-item met';
+                reqDiv.querySelector('.requirement-icon').textContent = '✅';
             } else {
-                container.className = 'requirement-item not-met';
-                document.getElementById('referralIcon').textContent = '⭕';
+                reqDiv.className = 'requirement-item not-met';
+                reqDiv.querySelector('.requirement-icon').textContent = '⭕';
             }
-            checkWithdrawalEligibility();
+            checkEligibility();
         }
         
         function updateTimeRequirement() {
             if (!userCreatedAt) return;
             
-            const now = new Date();
-            const hoursPassed = (now - userCreatedAt) / (1000 * 60 * 60);
+            const hoursPassed = (Date.now() - userCreatedAt) / (1000 * 60 * 60);
             const target = 24;
             const progress = Math.min((hoursPassed / target) * 100, 100);
             const met = hoursPassed >= target;
             
-            const hoursDisplay = Math.floor(hoursPassed);
-            document.getElementById('timeStatus').textContent = `${hoursDisplay}h/${target}h`;
-            document.getElementById('timeProgressBar').style.width = `${progress}%`;
+            document.getElementById('timeStatus').textContent = `${Math.floor(hoursPassed)}h/${target}h`;
+            document.getElementById('timeBar').style.width = `${progress}%`;
             
+            const reqDiv = document.getElementById('timeReq');
             if (met) {
-                document.getElementById('timeRequirement').className = 'requirement-item met';
-                document.getElementById('timeIcon').textContent = '✅';
-                document.getElementById('timeInfo').textContent = '24 hours completed! You can withdraw';
+                reqDiv.className = 'requirement-item met';
+                reqDiv.querySelector('.requirement-icon').textContent = '✅';
             } else {
-                document.getElementById('timeRequirement').className = 'requirement-item not-met';
-                document.getElementById('timeIcon').textContent = '⏳';
-                document.getElementById('timeInfo').textContent = `${Math.ceil(target - hoursPassed)} hours remaining`;
+                reqDiv.className = 'requirement-item not-met';
+                reqDiv.querySelector('.requirement-icon').textContent = '⏳';
             }
-            checkWithdrawalEligibility();
+            checkEligibility();
         }
         
-        function checkWithdrawalEligibility() {
-            const referralStatus = document.getElementById('referralStatus').textContent;
-            const isReferralMet = referralStatus.startsWith('10/');
-            const isTimeMet = document.getElementById('timeStatus').textContent === '24h/24h';
+        function checkEligibility() {
+            const referralMet = document.getElementById('referralStatus').textContent.startsWith('10/');
+            const timeMet = document.getElementById('timeStatus').textContent === '24h/24h';
             const withdrawBtn = document.getElementById('withdrawBtn');
-            const messageEl = document.getElementById('requirementMessage');
+            const msgDiv = document.getElementById('requirementMsg');
             
-            if (isReferralMet || isTimeMet) {
+            if (referralMet || timeMet) {
                 withdrawBtn.disabled = false;
-                messageEl.className = 'alert alert-success mt-3';
-                messageEl.innerHTML = '<i class="fas fa-check-circle"></i> ✅ You are eligible to withdraw!';
+                msgDiv.className = 'alert alert-success';
+                msgDiv.innerHTML = '✅ You are eligible to withdraw!';
             } else {
                 withdrawBtn.disabled = true;
-                messageEl.className = 'alert alert-warning mt-3';
-                messageEl.innerHTML = '<i class="fas fa-hourglass-half"></i> ⏳ Complete ONE requirement to withdraw';
-            }
-        }
-        
-        async function requestWithdrawal() {
-            const amount = parseFloat(document.getElementById('withdrawAmount').value);
-            const telebirrNumber = document.getElementById('withdrawTelebirr').value.trim();
-            const method = document.getElementById('withdrawMethod').value;
-            
-            if (!amount || amount < 10) {
-                alert('Minimum withdrawal amount is $10');
-                return;
-            }
-            
-            const balance = parseFloat(localStorage.getItem('userBalance') || 0);
-            if (amount > balance) {
-                alert('Insufficient balance');
-                return;
-            }
-            
-            if (method === 'telebirr' && (!telebirrNumber || telebirrNumber.length < 9)) {
-                alert('Please enter a valid Telebirr number');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/withdraw', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        phone: userPhone,
-                        amount: amount,
-                        method: method,
-                        account: telebirrNumber
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert('Withdrawal request submitted! Processing within 48 hours.');
-                    document.getElementById('withdrawAmount').value = '';
-                    document.getElementById('withdrawTelebirr').value = '';
-                    await loadBalance();
-                } else {
-                    alert(data.error || 'Withdrawal request failed');
-                }
-            } catch (error) {
-                alert('Network error. Please try again.');
+                msgDiv.className = 'alert alert-warning';
+                msgDiv.innerHTML = '⏳ Complete ONE requirement to withdraw';
             }
         }
         
         async function refreshAll() {
-            await Promise.all([
-                loadBalance(),
-                loadReferralInfo(),
-                loadUserInfo(),
-                loadDepositHistory(),
-                loadPendingRequests()
-            ]);
-        }
-        
-        function startAutoRefresh() {
-            if (refreshInterval) clearInterval(refreshInterval);
-            refreshInterval = setInterval(() => {
-                loadBalance();
-                loadPendingRequests();
-                updateTimeRequirement();
-            }, 10000);
+            await Promise.all([loadBalance(), loadReferralInfo(), loadUserInfo(), loadDepositHistory(), loadPendingRequests()]);
         }
         
         // Initialize
@@ -1102,20 +767,7 @@
         loadUserInfo();
         loadDepositHistory();
         loadPendingRequests();
-        startAutoRefresh();
-        
-        document.getElementById('transactionModal').addEventListener('hidden.bs.modal', function() {
-            if (timerInterval) clearInterval(timerInterval);
-        });
-        
-        window.addEventListener('beforeunload', () => {
-            if (refreshInterval) clearInterval(refreshInterval);
-            if (timerInterval) clearInterval(timerInterval);
-        });
-        
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) refreshAll();
-        });
+        setInterval(() => { loadBalance(); loadPendingRequests(); updateTimeRequirement(); }, 10000);
     </script>
 </body>
 </html>
