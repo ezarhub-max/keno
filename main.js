@@ -148,7 +148,7 @@ app.use(express.static(path.join(__dirname)));
 // TELEGRAM BOT INTEGRATION
 // ============================================
 
-const BOT_TOKEN = process.env.BOT_TOKEN || '8377238725:AAHbdKSHJfJRepL2Jzhab0qcOnIVGzN2HRU';
+const BOT_TOKEN = process.env.BOT_TOKEN || '8281242847:AAHDPy5cxY2nqCdY8Ebsx51HfiZJ_J4h1lE';
 const sessions = new Map();
 const bot = new Telegraf(BOT_TOKEN);
 const BASE_URL = process.env.RENDER_EXTERNAL_URL || 'https://keno-t5bi.onrender.com';
