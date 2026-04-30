@@ -4,7 +4,7 @@ const socketIo = require('socket.io');
 const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
-const { Telegraf, Markup } = require('telegraf');
+const { Telegraf } = require('telegraf');
 require('dotenv').config();
 
 const app = express();
@@ -19,7 +19,7 @@ const io = socketIo(server, {
 // Store active game sessions
 const gameSessions = new Map();
 
-// Color codes for console output
+// Color codes for better console output
 const colors = {
     reset: '\x1b[0m',
     green: '\x1b[32m',
@@ -30,14 +30,12 @@ const colors = {
     cyan: '\x1b[36m'
 };
 
-// PostgreSQL connection
+// ============================================
+// DATABASE CONNECTION - USING DATABASE_URL
+// ============================================
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'horse_racing',
-    password: 'mahtot123',
-    port: 5433,
-    ssl: false
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 // Test database connection
@@ -53,6 +51,95 @@ pool.connect((err, client, release) => {
     }
 });
 
+// Create tables if not exists
+async function initDatabase() {
+    console.log(`${colors.cyan}📋 Creating database tables if not exist...${colors.reset}`);
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                phone VARCHAR(20) UNIQUE NOT NULL,
+                password VARCHAR(100) NOT NULL,
+                wallet_balance DECIMAL(10,2) DEFAULT 100.00,
+                referral_code VARCHAR(50) UNIQUE,
+                total_deposits DECIMAL(10,2) DEFAULT 0,
+                total_referrals INT DEFAULT 0,
+                referral_bonus DECIMAL(10,2) DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS bets (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                game_id VARCHAR(50),
+                horse_number INTEGER,
+                selected_numbers INTEGER[],
+                bet_amount DECIMAL(10,2),
+                win_amount DECIMAL(10,2) DEFAULT 0,
+                won BOOLEAN DEFAULT FALSE,
+                drawn_numbers INTEGER[],
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS referrals (
+                id SERIAL PRIMARY KEY,
+                referrer_phone VARCHAR(20),
+                referred_phone VARCHAR(20),
+                bonus_amount DECIMAL(10,2),
+                bonus_awarded BOOLEAN DEFAULT FALSE,
+                bonus_awarded_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS telegram_links (
+                id SERIAL PRIMARY KEY,
+                telegram_id BIGINT UNIQUE,
+                telegram_username VARCHAR(100),
+                phone VARCHAR(20)
+            )
+        `);
+        
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS deposits (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                phone VARCHAR(20) NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                transaction_id VARCHAR(100) UNIQUE NOT NULL,
+                status VARCHAR(20) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                approved_at TIMESTAMP,
+                approved_by VARCHAR(50)
+            )
+        `);
+        
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS withdrawals (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                amount DECIMAL(10,2) NOT NULL,
+                method VARCHAR(50),
+                account VARCHAR(100),
+                status VARCHAR(20) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        console.log(`${colors.green}✅ All database tables ready${colors.reset}`);
+    } catch (err) {
+        console.error(`${colors.red}❌ Database init error:${colors.reset}`, err.message);
+    }
+}
+
+// Initialize database
+initDatabase();
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
@@ -61,13 +148,19 @@ app.use(express.static(path.join(__dirname)));
 // TELEGRAM BOT INTEGRATION
 // ============================================
 
-const BOT_TOKEN = '8377238725:AAHbdKSHJfJRepL2Jzhab0qcOnIVGzN2HRU';
+const BOT_TOKEN = process.env.BOT_TOKEN || '8377238725:AAHbdKSHJfJRepL2Jzhab0qcOnIVGzN2HRU';
 const sessions = new Map();
 const bot = new Telegraf(BOT_TOKEN);
-const BASE_URL = process.env.RENDER_EXTERNAL_URL || 'https://horse-racing-pu5g.onrender.com';
+const BASE_URL = process.env.RENDER_EXTERNAL_URL || 'https://keno-t5bi.onrender.com';
 
 console.log(`${colors.cyan}🤖 Initializing Telegram bot...${colors.reset}`);
 console.log(`${colors.cyan}📡 Bot Base URL: ${BASE_URL}${colors.reset}`);
+
+// Set webhook for production
+if (process.env.NODE_ENV === 'production') {
+    bot.telegram.setWebhook(`${BASE_URL}/webhook`);
+    app.use(bot.webhookCallback('/webhook'));
+}
 
 // Generate unique referral code
 function generateReferralCode(userId, phone) {
@@ -75,15 +168,11 @@ function generateReferralCode(userId, phone) {
     return `REF${userId}${cleanPhone}`;
 }
 
-// Get referral statistics
 async function getReferralStats(phone) {
     try {
         const result = await pool.query(`
-            SELECT 
-                COUNT(*) as total_referrals,
-                COALESCE(SUM(bonus_amount), 0) as total_bonus
-            FROM referrals 
-            WHERE referrer_phone = $1 AND bonus_awarded = TRUE
+            SELECT COUNT(*) as total_referrals, COALESCE(SUM(bonus_amount), 0) as total_bonus
+            FROM referrals WHERE referrer_phone = $1 AND bonus_awarded = TRUE
         `, [phone]);
         return result.rows[0];
     } catch (err) {
@@ -91,7 +180,6 @@ async function getReferralStats(phone) {
     }
 }
 
-// Check if user is registered
 async function isUserRegistered(telegramId) {
     try {
         const linkCheck = await pool.query('SELECT * FROM telegram_links WHERE telegram_id = $1', [telegramId]);
@@ -112,11 +200,11 @@ bot.start(async (ctx) => {
     if (referralCode) sessions.set(ctx.from.id, { referral_code: referralCode, step: 'start' });
     
     ctx.reply(
-        '🐎 HORSE RACING BET BOT\n\n' +
+        '🐎 HORSE RACING & KENO BET BOT\n\n' +
         '━━━━━━━━━━━━━━━━━━━━\n\n' +
         '🎰 Games Available:\n' +
         '• Horse Racing - Bet on 6 horses\n' +
-        '• Keno - Pick 1-10 numbers\n\n' +
+        '• Keno - Pick 1-10 numbers, win up to 20,000x!\n\n' +
         '📋 Commands:\n' +
         '/register - Create new account\n' +
         '/play - Auto-login to app\n' +
@@ -124,9 +212,7 @@ bot.start(async (ctx) => {
         '/invite - Get referral link\n' +
         '/referrals - View your referrals\n' +
         '/keno - Play Keno\n' +
-        '/help - Show this menu\n\n' +
-        '━━━━━━━━━━━━━━━━━━━━\n' +
-        `🎲 Your referral link: t.me/${ctx.botInfo.username}?start=${referralCode || ''}`
+        '/help - Show this menu'
     );
 });
 
@@ -147,20 +233,15 @@ bot.help((ctx) => {
 
 // /cancel command
 bot.command('cancel', (ctx) => {
-    if (sessions.delete(ctx.from.id)) {
-        ctx.reply('❌ Registration cancelled');
-    } else {
-        ctx.reply('No active session');
-    }
+    if (sessions.delete(ctx.from.id)) ctx.reply('❌ Registration cancelled');
+    else ctx.reply('No active session');
 });
 
 // /invite command
 bot.command('invite', async (ctx) => {
     try {
         const registered = await isUserRegistered(ctx.from.id);
-        if (!registered.registered) {
-            return ctx.reply('❌ You need to register first. Use /register');
-        }
+        if (!registered.registered) return ctx.reply('❌ Register first with /register');
         
         const botUsername = ctx.botInfo ? ctx.botInfo.username : 'ALPHA_ALLGAME_BOT';
         const userData = await pool.query('SELECT referral_code FROM users WHERE phone = $1', [registered.phone]);
@@ -179,8 +260,7 @@ bot.command('invite', async (ctx) => {
             `• Awarded Referrals: ${awarded.rows[0].count}\n` +
             `• Pending Referrals: ${pending.rows[0].count}\n` +
             `• Total Bonus Earned: $${parseFloat(bonus.rows[0].total || 0).toFixed(2)}\n\n` +
-            `💰 You get $10 for each friend who makes their first deposit!\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━`,
+            `💰 You get $10 for each friend who makes their first deposit!`,
             {
                 reply_markup: {
                     inline_keyboard: [
@@ -197,55 +277,23 @@ bot.command('invite', async (ctx) => {
 });
 
 // /referrals command
-bot.command('referrals', async (ctx) => {
-    await viewReferrals(ctx);
-});
-
-bot.action('view_referrals', async (ctx) => {
-    await viewReferrals(ctx);
-});
+bot.command('referrals', async (ctx) => await viewReferrals(ctx));
+bot.action('view_referrals', async (ctx) => await viewReferrals(ctx));
 
 async function viewReferrals(ctx) {
     try {
         const registered = await isUserRegistered(ctx.from.id);
-        if (!registered.registered) {
-            return ctx.reply('❌ You need to register first. Use /register');
-        }
+        if (!registered.registered) return ctx.reply('❌ Register first');
         
-        const awarded = await pool.query(`
-            SELECT referred_phone, created_at, bonus_amount, bonus_awarded_at 
-            FROM referrals WHERE referrer_phone = $1 AND bonus_awarded = TRUE
-            ORDER BY bonus_awarded_at DESC LIMIT 10
-        `, [registered.phone]);
-        
-        const pending = await pool.query(`
-            SELECT referred_phone, created_at 
-            FROM referrals WHERE referrer_phone = $1 AND bonus_awarded = FALSE
-            ORDER BY created_at DESC LIMIT 10
-        `, [registered.phone]);
+        const awarded = await pool.query('SELECT referred_phone, bonus_awarded_at FROM referrals WHERE referrer_phone = $1 AND bonus_awarded = TRUE', [registered.phone]);
+        const pending = await pool.query('SELECT referred_phone, created_at FROM referrals WHERE referrer_phone = $1 AND bonus_awarded = FALSE', [registered.phone]);
         
         let message = `👥 YOUR REFERRALS\n\n━━━━━━━━━━━━━━━━━━━━\n\n`;
-        
         message += `✅ AWARDED (${awarded.rows.length}):\n`;
-        if (awarded.rows.length > 0) {
-            awarded.rows.forEach((ref, i) => {
-                const date = new Date(ref.bonus_awarded_at).toLocaleDateString();
-                message += `  ${i+1}. ${ref.referred_phone} - $${ref.bonus_amount} (${date})\n`;
-            });
-        } else {
-            message += `  None yet\n`;
-        }
-        
+        awarded.rows.forEach((r, i) => message += `  ${i+1}. ${r.referred_phone}\n`);
         message += `\n⏳ PENDING (${pending.rows.length}):\n`;
-        if (pending.rows.length > 0) {
-            pending.rows.forEach((ref, i) => {
-                const date = new Date(ref.created_at).toLocaleDateString();
-                message += `  ${i+1}. ${ref.referred_phone} (registered ${date})\n`;
-            });
-            message += `\n💡 Pending referrals award $10 when they make first deposit!`;
-        } else {
-            message += `  None\n`;
-        }
+        pending.rows.forEach((r, i) => message += `  ${i+1}. ${r.referred_phone}\n`);
+        message += `\n💡 Pending referrals award $10 when they make first deposit!`;
         
         await ctx.reply(message);
     } catch (err) {
@@ -258,9 +306,7 @@ async function viewReferrals(ctx) {
 bot.command('keno', async (ctx) => {
     try {
         const registered = await isUserRegistered(ctx.from.id);
-        if (!registered.registered) {
-            return ctx.reply('❌ You need to register first. Use /register');
-        }
+        if (!registered.registered) return ctx.reply('❌ Register first with /register');
         
         const kenoUrl = `${BASE_URL}/keno.html?phone=${encodeURIComponent(registered.phone)}&auto=1`;
         
@@ -272,9 +318,7 @@ bot.command('keno', async (ctx) => {
             `• Place your bets\n` +
             `• Watch numbers get drawn\n` +
             `• Win up to 20,000x your bet!\n\n` +
-            `💰 Current Balance: $${parseFloat(registered.user.wallet_balance).toFixed(2)}\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `Click below to start playing!`,
+            `💰 Current Balance: $${parseFloat(registered.user.wallet_balance).toFixed(2)}`,
             {
                 reply_markup: {
                     inline_keyboard: [
@@ -284,7 +328,7 @@ bot.command('keno', async (ctx) => {
             }
         );
     } catch (err) {
-        console.error('Keno command error:', err);
+        console.error('Keno error:', err);
         ctx.reply('❌ Error. Please try again.');
     }
 });
@@ -298,47 +342,13 @@ bot.command('register', async (ctx) => {
     
     try {
         const registered = await isUserRegistered(userId);
-        
         if (registered.registered) {
             const autoLoginUrl = `${BASE_URL}/login.html?phone=${encodeURIComponent(registered.phone)}&auto=1`;
-            return ctx.reply(
-                `✅ ALREADY REGISTERED!\n\n` +
-                `📱 Phone: ${registered.phone}\n` +
-                `💰 Balance: $${parseFloat(registered.user.wallet_balance).toFixed(2)}\n\n` +
-                `Click below to auto-login:`,
-                {
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{ text: '🚀 Auto-Login', web_app: { url: autoLoginUrl } }],
-                            [{ text: '🎲 Play Keno', web_app: { url: `${BASE_URL}/keno.html?phone=${encodeURIComponent(registered.phone)}&auto=1` } }]
-                        ]
-                    }
-                }
-            );
+            return ctx.reply(`✅ Already registered!\nPhone: ${registered.phone}\nBalance: $${registered.user.wallet_balance}`, { reply_markup: { inline_keyboard: [[{ text: '🚀 Auto-Login', web_app: { url: autoLoginUrl } }]] } });
         }
         
-        sessions.set(userId, { 
-            step: 'phone', 
-            telegram_id: userId,
-            telegram_username: ctx.from.username || 'telegram_user',
-            referral_code: referralCode
-        });
-        
-        await ctx.reply(
-            '📱 WELCOME!\n\n' +
-            '━━━━━━━━━━━━━━━━━━━━\n\n' +
-            'To register, please share your phone number using the button below.\n\n' +
-            'This will only be used for your account.',
-            {
-                reply_markup: {
-                    keyboard: [
-                        [{ text: '📱 Share Phone Number', request_contact: true }]
-                    ],
-                    resize_keyboard: true,
-                    one_time_keyboard: true
-                }
-            }
-        );
+        sessions.set(userId, { step: 'phone', telegram_id: userId, telegram_username: ctx.from.username || 'telegram_user', referral_code: referralCode });
+        await ctx.reply('📱 Welcome!\nShare your phone number:', { reply_markup: { keyboard: [[{ text: '📱 Share Phone Number', request_contact: true }]], resize_keyboard: true, one_time_keyboard: true } });
     } catch (err) {
         console.error('Register error:', err);
         ctx.reply('❌ Database error. Try again later.');
@@ -350,155 +360,61 @@ bot.on('contact', async (ctx) => {
     const session = sessions.get(ctx.from.id);
     const userId = ctx.from.id;
     const contact = ctx.message.contact;
-    
-    if (contact.user_id !== userId) {
-        return ctx.reply('❌ Please share your own phone number.');
-    }
+    if (contact.user_id !== userId) return ctx.reply('❌ Share your own number');
     
     const phone = contact.phone_number;
     const telegramUsername = ctx.from.username || 'telegram_user';
     
     try {
         const registered = await isUserRegistered(userId);
-        
         if (registered.registered) {
-            await ctx.reply('✅ You are already registered!', { reply_markup: { remove_keyboard: true } });
+            await ctx.reply('✅ Already registered!', { reply_markup: { remove_keyboard: true } });
             const autoLoginUrl = `${BASE_URL}/login.html?phone=${encodeURIComponent(registered.phone)}&auto=1`;
-            return ctx.reply(
-                `Click below to auto-login:`,
-                {
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{ text: '🚀 Auto-Login', web_app: { url: autoLoginUrl } }]
-                        ]
-                    }
-                }
-            );
+            return ctx.reply(`Click below:`, { reply_markup: { inline_keyboard: [[{ text: '🚀 Auto-Login', web_app: { url: autoLoginUrl } }]] } });
         }
         
         const check = await pool.query('SELECT * FROM users WHERE phone = $1', [phone]);
-        
         if (check.rows.length > 0) {
             await pool.query('INSERT INTO telegram_links (telegram_id, telegram_username, phone) VALUES ($1,$2,$3)', [userId, telegramUsername, phone]);
-            await ctx.reply('✅ Phone number linked to your existing account!', { reply_markup: { remove_keyboard: true } });
+            await ctx.reply('✅ Phone linked!', { reply_markup: { remove_keyboard: true } });
             const autoLoginUrl = `${BASE_URL}/login.html?phone=${encodeURIComponent(phone)}&auto=1`;
-            return ctx.reply(
-                `Click below to auto-login:`,
-                {
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{ text: '🚀 Auto-Login', web_app: { url: autoLoginUrl } }]
-                        ]
-                    }
-                }
-            );
+            return ctx.reply(`Click below:`, { reply_markup: { inline_keyboard: [[{ text: '🚀 Auto-Login', web_app: { url: autoLoginUrl } }]] } });
         }
         
         const userReferralCode = generateReferralCode(userId, phone);
+        await pool.query('INSERT INTO users (phone, password, wallet_balance, referral_code) VALUES ($1,$2,$3,$4)', [phone, 'telegram123', 100.00, userReferralCode]);
+        await pool.query('INSERT INTO telegram_links (telegram_id, telegram_username, phone) VALUES ($1,$2,$3)', [userId, telegramUsername, phone]);
         
-        await pool.query(
-            'INSERT INTO users (phone, password, wallet_balance, referral_code) VALUES ($1,$2,$3,$4)',
-            [phone, 'telegram123', 100.00, userReferralCode]
-        );
-        
-        await pool.query(
-            'INSERT INTO telegram_links (telegram_id, telegram_username, phone) VALUES ($1,$2,$3)',
-            [userId, telegramUsername, phone]
-        );
-        
-        // Record referral if provided
         if (session?.referral_code) {
             const referrer = await pool.query('SELECT phone FROM users WHERE referral_code = $1', [session.referral_code]);
             if (referrer.rows.length > 0) {
-                await pool.query(
-                    'INSERT INTO referrals (referrer_phone, referred_phone, bonus_amount, bonus_awarded) VALUES ($1,$2,$3,false)',
-                    [referrer.rows[0].phone, phone, 10.00]
-                );
-                console.log(`🔗 Referral recorded: ${referrer.rows[0].phone} referred ${phone}`);
+                await pool.query('INSERT INTO referrals (referrer_phone, referred_phone, bonus_amount, bonus_awarded) VALUES ($1,$2,$3,false)', [referrer.rows[0].phone, phone, 10.00]);
             }
         }
         
         await ctx.reply('✅ Registration successful!', { reply_markup: { remove_keyboard: true } });
-        
         const autoLoginUrl = `${BASE_URL}/login.html?phone=${encodeURIComponent(phone)}&auto=1`;
-        
-        await ctx.reply(
-            `🎉 YOUR ACCOUNT IS READY!\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `📱 Phone: ${phone}\n` +
-            `💰 Balance: $100.00\n` +
-            `🎲 Referral Code: ${userReferralCode}\n\n` +
-            `💡 Share your code with friends! You get $10 when they make their first deposit.\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `Click below to start playing!`,
-            {
-                reply_markup: {
-                    inline_keyboard: [
-                        [{ text: '🚀 Start Playing', web_app: { url: autoLoginUrl } }],
-                        [{ text: '🎲 Play Keno', web_app: { url: `${BASE_URL}/keno.html?phone=${encodeURIComponent(phone)}&auto=1` } }],
-                        [{ text: '👥 My Referrals', callback_data: 'view_referrals' }]
-                    ]
-                }
-            }
-        );
-        
+        await ctx.reply(`Your account is ready!\nPhone: ${phone}\nBalance: $100.00\nReferral Code: ${userReferralCode}`, { reply_markup: { inline_keyboard: [[{ text: '🚀 Start Playing', web_app: { url: autoLoginUrl } }]] } });
         sessions.delete(ctx.from.id);
     } catch (err) {
-        console.error('Contact handler error:', err);
+        console.error('Contact error:', err);
         ctx.reply('❌ Registration failed. Please try again.', { reply_markup: { remove_keyboard: true } });
     }
 });
 
-// /play command
 bot.command('play', async (ctx) => {
-    try {
-        const registered = await isUserRegistered(ctx.from.id);
-        if (registered.registered) {
-            const autoLoginUrl = `${BASE_URL}/login.html?phone=${encodeURIComponent(registered.phone)}&auto=1`;
-            return ctx.reply(
-                `🎮 GAME MENU\n\nChoose your game:`,
-                {
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{ text: '🏇 Horse Racing', web_app: { url: autoLoginUrl } }],
-                            [{ text: '🎲 Keno', web_app: { url: `${BASE_URL}/keno.html?phone=${encodeURIComponent(registered.phone)}&auto=1` } }]
-                        ]
-                    }
-                }
-            );
-        }
-        ctx.reply('❌ Not registered. Use /register first');
-    } catch (err) {
-        console.error('Play error:', err);
-        ctx.reply('❌ Database error. Try again later.');
+    const registered = await isUserRegistered(ctx.from.id);
+    if (registered.registered) {
+        const autoLoginUrl = `${BASE_URL}/login.html?phone=${encodeURIComponent(registered.phone)}&auto=1`;
+        return ctx.reply(`Click below:`, { reply_markup: { inline_keyboard: [[{ text: '🚀 Play', web_app: { url: autoLoginUrl } }]] } });
     }
+    ctx.reply('❌ Not registered. Use /register');
 });
 
-// /balance command
 bot.command('balance', async (ctx) => {
-    try {
-        const registered = await isUserRegistered(ctx.from.id);
-        if (registered.registered) {
-            return ctx.reply(
-                `💰 YOUR BALANCE\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━\n\n` +
-                `📱 Phone: ${registered.phone}\n` +
-                `💰 Balance: $${parseFloat(registered.user.wallet_balance).toFixed(2)}\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━`,
-                {
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{ text: '🎮 Play Now', callback_data: 'play_now' }]
-                        ]
-                    }
-                }
-            );
-        }
-        ctx.reply('❌ Not registered. Use /register first');
-    } catch (err) {
-        console.error('Balance error:', err);
-        ctx.reply('❌ Error fetching balance');
-    }
+    const registered = await isUserRegistered(ctx.from.id);
+    if (registered.registered) return ctx.reply(`💰 Balance: $${registered.user.wallet_balance}`);
+    ctx.reply('❌ Not registered');
 });
 
 bot.action('play_now', async (ctx) => {
@@ -506,37 +422,17 @@ bot.action('play_now', async (ctx) => {
     const registered = await isUserRegistered(ctx.from.id);
     if (registered.registered) {
         const autoLoginUrl = `${BASE_URL}/login.html?phone=${encodeURIComponent(registered.phone)}&auto=1`;
-        await ctx.reply(
-            `🎮 Choose your game:`,
-            {
-                reply_markup: {
-                    inline_keyboard: [
-                        [{ text: '🏇 Horse Racing', web_app: { url: autoLoginUrl } }],
-                        [{ text: '🎲 Keno', web_app: { url: `${BASE_URL}/keno.html?phone=${encodeURIComponent(registered.phone)}&auto=1` } }]
-                    ]
-                }
-            }
-        );
+        await ctx.reply(`Click below:`, { reply_markup: { inline_keyboard: [[{ text: '🚀 Auto-Login', web_app: { url: autoLoginUrl } }]] } });
     }
 });
 
-bot.action('cancel', (ctx) => {
-    sessions.delete(ctx.from.id);
-    ctx.editMessageText('❌ Cancelled');
-});
+bot.catch((err, ctx) => console.error('❌ Bot error:', err));
 
-bot.catch((err, ctx) => {
-    console.error('❌ Bot error:', err);
-});
+// Launch bot (polling for development, webhook for production)
+if (process.env.NODE_ENV !== 'production') {
+    bot.launch().then(() => console.log(`${colors.green}✅ Telegram bot started (polling mode)!${colors.reset}`)).catch(err => console.log(`${colors.red}❌ Bot failed:${colors.reset}`, err.message));
+}
 
-// Launch bot
-bot.launch().then(() => {
-    console.log(`${colors.green}✅ Telegram bot started successfully!${colors.reset}`);
-}).catch((err) => {
-    console.log(`${colors.red}❌ Failed to start Telegram bot:${colors.reset}`, err.message);
-});
-
-// Graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
@@ -545,20 +441,17 @@ process.once('SIGTERM', () => bot.stop('SIGTERM'));
 // ============================================
 
 io.on('connection', (socket) => {
-    console.log(`${colors.green}🔌 New client connected - Socket ID: ${socket.id}${colors.reset}`);
+    console.log(`${colors.green}🔌 New client - ${socket.id}${colors.reset}`);
     
     socket.on('request-timer', () => {
         const now = Date.now();
         const nextRaceTime = Math.ceil(now / 6000) * 6000;
         const currentGameId = `GAME-${Math.floor(nextRaceTime / 1000).toString().slice(-6)}`;
-        
         socket.emit('race-timer', { nextRaceTime, gameId: currentGameId });
         
         const timerInterval = setInterval(() => {
             const timeToNext = nextRaceTime - Date.now();
-            if (timeToNext <= 5000 && timeToNext > 0) {
-                socket.emit('race-starting-soon', { gameId: currentGameId });
-            }
+            if (timeToNext <= 5000 && timeToNext > 0) socket.emit('race-starting-soon', { gameId: currentGameId });
             if (timeToNext <= 0) {
                 clearInterval(timerInterval);
                 socket.emit('race-started', { gameId: currentGameId });
@@ -566,39 +459,23 @@ io.on('connection', (socket) => {
                 if (game && game.status === 'waiting') startRace(currentGameId);
             }
         }, 1000);
-        
         socket.on('disconnect', () => clearInterval(timerInterval));
     });
     
     socket.on('join-game', (data) => {
         const { gameId, phone, horseNumber, betAmount } = data;
         socket.join(`game-${gameId}`);
-        
         if (!gameSessions.has(gameId)) {
-            gameSessions.set(gameId, {
-                id: gameId,
-                players: [],
-                startTime: null,
-                status: 'waiting',
-                winningHorse: null
-            });
+            gameSessions.set(gameId, { id: gameId, players: [], startTime: null, status: 'waiting', winningHorse: null });
         }
-        
         const game = gameSessions.get(gameId);
         if (!game.players.find(p => p.phone === phone)) {
-            game.players.push({
-                socketId: socket.id,
-                phone,
-                horseNumber: parseInt(horseNumber),
-                betAmount: parseFloat(betAmount)
-            });
+            game.players.push({ socketId: socket.id, phone, horseNumber: parseInt(horseNumber), betAmount: parseFloat(betAmount) });
         }
-        
         io.to(`game-${gameId}`).emit('player-count-update', { count: game.players.length });
     });
     
     socket.on('start-race', (gameId) => startRace(gameId));
-    
     socket.on('disconnect', () => {
         gameSessions.forEach((game, gameId) => {
             const idx = game.players.findIndex(p => p.socketId === socket.id);
@@ -625,29 +502,20 @@ async function finishRace(gameId) {
     if (!game || game.status !== 'racing') return;
     game.status = 'finished';
     
-    const results = game.players.map(player => ({
-        phone: player.phone,
-        horseNumber: player.horseNumber,
-        won: player.horseNumber === game.winningHorse,
-        winAmount: player.horseNumber === game.winningHorse ? player.betAmount * 4.5 : 0
-    }));
-    
-    for (const result of results) {
-        if (result.won) {
+    const results = game.players.map(p => ({ phone: p.phone, horseNumber: p.horseNumber, won: p.horseNumber === game.winningHorse, winAmount: p.horseNumber === game.winningHorse ? p.betAmount * 4.5 : 0 }));
+    for (const r of results) {
+        if (r.won) {
             const client = await pool.connect();
             try {
                 await client.query('BEGIN');
-                await client.query('UPDATE users SET wallet_balance = wallet_balance + $1 WHERE phone = $2', [result.winAmount, result.phone]);
-                const updated = await client.query('SELECT wallet_balance FROM users WHERE phone = $1', [result.phone]);
+                await client.query('UPDATE users SET wallet_balance = wallet_balance + $1 WHERE phone = $2', [r.winAmount, r.phone]);
+                const updated = await client.query('SELECT wallet_balance FROM users WHERE phone = $1', [r.phone]);
                 await client.query('COMMIT');
-                const playerSocket = game.players.find(p => p.phone === result.phone)?.socketId;
-                if (playerSocket) {
-                    io.to(playerSocket).emit('balance-update', { newBalance: parseFloat(updated.rows[0].wallet_balance) });
-                }
+                const psocket = game.players.find(p => p.phone === r.phone)?.socketId;
+                if (psocket) io.to(psocket).emit('balance-update', { newBalance: parseFloat(updated.rows[0].wallet_balance) });
             } catch(e) { await client.query('ROLLBACK'); } finally { client.release(); }
         }
     }
-    
     io.to(`game-${gameId}`).emit('race-finished', { gameId, winningHorse: game.winningHorse, results });
     setTimeout(() => gameSessions.delete(gameId), 30000);
 }
@@ -661,9 +529,7 @@ app.post('/login', async (req, res) => {
     if (!phone || !password) return res.status(400).json({ success: false, error: 'Missing credentials' });
     try {
         const user = await pool.query('SELECT * FROM users WHERE phone = $1', [phone.trim()]);
-        if (user.rows.length === 0 || user.rows[0].password !== password) {
-            return res.status(401).json({ success: false, error: 'Invalid credentials' });
-        }
+        if (user.rows.length === 0 || user.rows[0].password !== password) return res.status(401).json({ success: false, error: 'Invalid credentials' });
         res.json({ success: true, user: { id: user.rows[0].id, phone: user.rows[0].phone, wallet_balance: parseFloat(user.rows[0].wallet_balance) } });
     } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -706,9 +572,9 @@ app.post('/bet', async (req, res) => {
 
 app.get('/user/referrals/:phone', async (req, res) => {
     try {
-        const stats = await getReferralStats(req.params.phone);
+        const result = await pool.query('SELECT COUNT(*) as total, COALESCE(SUM(bonus_amount),0) as bonus FROM referrals WHERE referrer_phone = $1 AND bonus_awarded = TRUE', [req.params.phone]);
         const referrals = await pool.query('SELECT referred_phone, created_at, bonus_amount, bonus_awarded FROM referrals WHERE referrer_phone = $1', [req.params.phone]);
-        res.json({ success: true, total_referrals: stats.total_referrals, total_bonus: stats.total_bonus, referrals: referrals.rows });
+        res.json({ success: true, total_referrals: parseInt(result.rows[0].total), total_bonus: parseFloat(result.rows[0].bonus), referrals: referrals.rows });
     } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -784,165 +650,8 @@ app.post('/admin/delete-member', async (req, res) => {
 });
 
 // ============================================
-// KENO GAME BACKEND
-// ============================================
-
-let currentGameNumber = 123213;
-let currentGameId = `KENO-${currentGameNumber}`;
-let currentDrawnNumbers = null;
-let roundPhase = 'betting';
-let phaseStartTime = Date.now();
-let roundBets = [];
-
-const BETTING_DURATION = 30000;
-const DRAWING_DURATION = 30000;
-const RESULTS_DURATION = 5000;
-
-let roundTimer = null;
-
-function drawNumbers() {
-    const numbers = [];
-    const isSpecial = currentGameNumber % 5 === 0;
-    if (isSpecial) numbers.push(66, 14);
-    while (numbers.length < 20) {
-        const num = Math.floor(Math.random() * 80) + 1;
-        if (!numbers.includes(num)) numbers.push(num);
-    }
-    return numbers.sort((a, b) => a - b);
-}
-
-function calculatePayout(selectedCount, matches, betAmount) {
-    const multipliers = {
-        1: {1: 2.5}, 2: {2: 12, 1: 1.5}, 3: {3: 45, 2: 4, 1: 1.2},
-        4: {4: 150, 3: 12, 2: 2.5, 1: 1}, 5: {5: 400, 4: 35, 3: 7, 2: 2, 1: 1},
-        6: {6: 1000, 5: 100, 4: 20, 3: 5, 2: 2, 1: 1},
-        7: {7: 2500, 6: 250, 5: 50, 4: 12, 3: 3, 2: 1.5},
-        8: {8: 5000, 7: 500, 6: 100, 5: 25, 4: 6, 3: 2},
-        9: {9: 10000, 8: 1000, 7: 200, 6: 50, 5: 12, 4: 4},
-        10: {10: 20000, 9: 2000, 8: 400, 7: 100, 6: 25, 5: 6, 4: 2}
-    };
-    return betAmount * (multipliers[selectedCount]?.[matches] || 0);
-}
-
-async function processRoundResults() {
-    console.log(`\n📊 Processing results for ${currentGameId}`);
-    for (const bet of roundBets) {
-        const matches = bet.selectedNumbers.filter(n => currentDrawnNumbers.includes(n)).length;
-        const winAmount = calculatePayout(bet.selectedNumbers.length, matches, bet.betAmount);
-        if (winAmount > 0) {
-            await pool.query('UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2', [winAmount, bet.userId]);
-        }
-        await pool.query(`UPDATE bets SET win_amount = $1, won = $2, drawn_numbers = $3 WHERE id = $4`, [winAmount, winAmount > 0, currentDrawnNumbers, bet.betId]);
-    }
-}
-
-function startDrawingPhase() {
-    roundPhase = 'drawing';
-    phaseStartTime = Date.now();
-    currentDrawnNumbers = drawNumbers();
-    console.log(`🎨 Drawing phase: ${currentGameId} - Numbers: ${currentDrawnNumbers.join(', ')}`);
-    roundTimer = setTimeout(() => startResultsPhase(), DRAWING_DURATION);
-}
-
-async function startResultsPhase() {
-    roundPhase = 'results';
-    phaseStartTime = Date.now();
-    await processRoundResults();
-    roundTimer = setTimeout(() => startNextRound(), RESULTS_DURATION);
-}
-
-function startNextRound() {
-    currentGameNumber++;
-    currentGameId = `KENO-${currentGameNumber}`;
-    currentDrawnNumbers = null;
-    roundPhase = 'betting';
-    phaseStartTime = Date.now();
-    roundBets = [];
-    console.log(`🎲 New round: ${currentGameId} - Betting phase`);
-    roundTimer = setTimeout(() => startDrawingPhase(), BETTING_DURATION);
-}
-
-// Start the first round
-startNextRound();
-
-// Keno endpoints
-app.get('/keno/state', (req, res) => {
-    const elapsed = Date.now() - phaseStartTime;
-    let timeLeft = 0;
-    if (roundPhase === 'betting') timeLeft = Math.max(0, Math.floor((BETTING_DURATION - elapsed) / 1000));
-    else if (roundPhase === 'drawing') timeLeft = Math.max(0, Math.floor((DRAWING_DURATION - elapsed) / 1000));
-    else timeLeft = Math.max(0, Math.floor((RESULTS_DURATION - elapsed) / 1000));
-    
-    res.json({
-        success: true,
-        gameId: currentGameId,
-        gameNumber: currentGameNumber,
-        phase: roundPhase,
-        timeLeft: timeLeft,
-        isSpecial: currentGameNumber % 5 === 0,
-        drawnNumbers: (roundPhase === 'drawing' || roundPhase === 'results') ? currentDrawnNumbers : null
-    });
-});
-
-app.post('/keno/bet', async (req, res) => {
-    const { phone, selectedNumbers, betAmount } = req.body;
-    if (!selectedNumbers || selectedNumbers.length < 1 || selectedNumbers.length > 10) {
-        return res.status(400).json({ error: 'Select 1-10 numbers' });
-    }
-    if (roundPhase !== 'betting') {
-        return res.status(400).json({ error: `Betting closed! Current phase: ${roundPhase}` });
-    }
-    
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-        const user = await client.query('SELECT * FROM users WHERE phone = $1 FOR UPDATE', [phone]);
-        if (user.rows.length === 0) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'User not found' }); }
-        const balance = parseFloat(user.rows[0].wallet_balance);
-        if (balance < betAmount) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Insufficient balance' }); }
-        await client.query('UPDATE users SET wallet_balance = wallet_balance - $1 WHERE id = $2', [betAmount, user.rows[0].id]);
-        const betResult = await client.query(
-            `INSERT INTO bets (user_id, game_id, bet_amount, selected_numbers, created_at) VALUES ($1,$2,$3,$4,NOW()) RETURNING id`,
-            [user.rows[0].id, currentGameId, betAmount, selectedNumbers]
-        );
-        roundBets.push({ betId: betResult.rows[0].id, userId: user.rows[0].id, phone, selectedNumbers, betAmount });
-        await client.query('COMMIT');
-        res.json({ success: true, newBalance: balance - betAmount, gameId: currentGameId });
-    } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
-});
-
-app.get('/keno/history/:phone', async (req, res) => {
-    try {
-        const user = await pool.query('SELECT id FROM users WHERE phone = $1', [req.params.phone]);
-        if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-        const history = await pool.query(`SELECT * FROM bets WHERE user_id = $1 AND game_id LIKE 'KENO-%' ORDER BY created_at DESC LIMIT 20`, [user.rows[0].id]);
-        res.json(history.rows);
-    } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ============================================
 // DEPOSIT SYSTEM
 // ============================================
-
-async function createDepositsTable() {
-    try {
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS deposits (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                phone VARCHAR(20) NOT NULL,
-                amount DECIMAL(10,2) NOT NULL,
-                transaction_id VARCHAR(100) UNIQUE NOT NULL,
-                status VARCHAR(20) DEFAULT 'pending',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                approved_at TIMESTAMP,
-                approved_by VARCHAR(50)
-            )
-        `);
-        console.log(`${colors.green}✅ Deposits table ready${colors.reset}`);
-    } catch(e) { console.error('Deposits table error:', e); }
-}
-createDepositsTable();
 
 app.post('/deposit/request', async (req, res) => {
     const { phone, amount, transactionId } = req.body;
@@ -953,14 +662,14 @@ app.post('/deposit/request', async (req, res) => {
         if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
         const existing = await pool.query('SELECT * FROM deposits WHERE transaction_id = $1', [transactionId]);
         if (existing.rows.length > 0) return res.status(400).json({ error: 'Transaction ID exists' });
-        await pool.query('INSERT INTO deposits (user_id, phone, amount, transaction_id) VALUES ($1,$2,$3,$4)', [user.rows[0].id, phone, amount, transactionId]);
+        await pool.query('INSERT INTO deposits (user_id, phone, amount, transaction_id, status) VALUES ($1,$2,$3,$4,$5)', [user.rows[0].id, phone, amount, transactionId, 'pending']);
         res.json({ success: true, message: 'Deposit request submitted' });
     } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/admin/deposits', async (req, res) => {
     try {
-        const deposits = await pool.query('SELECT d.*, u.wallet_balance FROM deposits d JOIN users u ON d.user_id = u.id WHERE d.status = "pending"');
+        const deposits = await pool.query('SELECT d.*, u.wallet_balance FROM deposits d JOIN users u ON d.user_id = u.id WHERE d.status = "pending" ORDER BY created_at ASC');
         res.json(deposits.rows);
     } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -995,6 +704,157 @@ app.get('/deposit/history/:phone', async (req, res) => {
     } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/deposit/pending/:phone', async (req, res) => {
+    try {
+        const pending = await pool.query('SELECT * FROM deposits WHERE phone = $1 AND status = $2 ORDER BY created_at DESC', [req.params.phone, 'pending']);
+        res.json(pending.rows);
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/withdraw', async (req, res) => {
+    const { phone, amount, method, account } = req.body;
+    if (!amount || amount < 10) return res.status(400).json({ error: 'Minimum withdrawal is $10' });
+    const user = await pool.query('SELECT id, wallet_balance FROM users WHERE phone = $1', [phone]);
+    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    if (user.rows[0].wallet_balance < amount) return res.status(400).json({ error: 'Insufficient balance' });
+    await pool.query('INSERT INTO withdrawals (user_id, amount, method, account, status) VALUES ($1,$2,$3,$4,$5)', [user.rows[0].id, amount, method, account, 'pending']);
+    await pool.query('UPDATE users SET wallet_balance = wallet_balance - $1 WHERE id = $2', [amount, user.rows[0].id]);
+    res.json({ success: true, message: 'Withdrawal request submitted' });
+});
+
+// ============================================
+// KENO GAME BACKEND - SHARED FOR ALL PLAYERS
+// ============================================
+
+let currentKenoGameId = null;
+let currentKenoGameNumber = 123213;
+let currentKenoDrawnNumbers = null;
+let kenoRoundActive = false;
+let kenoRoundStartTime = null;
+let kenoRoundTimer = null;
+let kenoRoundBets = [];
+let kenoRoundPhase = 'betting';
+
+const KENO_BETTING_DURATION = 30000;
+const KENO_DRAWING_DURATION = 30000;
+const KENO_RESULTS_DURATION = 5000;
+
+function drawKenoNumbers(gameNumber) {
+    const numbers = [];
+    const isDivisibleBy5 = gameNumber % 5 === 0;
+    if (isDivisibleBy5) numbers.push(66, 14);
+    while (numbers.length < 20) {
+        const num = Math.floor(Math.random() * 80) + 1;
+        if (!numbers.includes(num)) numbers.push(num);
+    }
+    return numbers.sort((a, b) => a - b);
+}
+
+function calculateKenoPayout(selectedCount, matches, betAmount) {
+    const multipliers = {
+        1: {1: 2.5}, 2: {2: 12, 1: 1.5}, 3: {3: 45, 2: 4, 1: 1.2},
+        4: {4: 150, 3: 12, 2: 2.5, 1: 1}, 5: {5: 400, 4: 35, 3: 7, 2: 2, 1: 1},
+        6: {6: 1000, 5: 100, 4: 20, 3: 5, 2: 2, 1: 1},
+        7: {7: 2500, 6: 250, 5: 50, 4: 12, 3: 3, 2: 1.5},
+        8: {8: 5000, 7: 500, 6: 100, 5: 25, 4: 6, 3: 2},
+        9: {9: 10000, 8: 1000, 7: 200, 6: 50, 5: 12, 4: 4},
+        10: {10: 20000, 9: 2000, 8: 400, 7: 100, 6: 25, 5: 6, 4: 2}
+    };
+    return betAmount * (multipliers[selectedCount]?.[matches] || 0);
+}
+
+function startNewKenoRound() {
+    if (kenoRoundTimer) clearTimeout(kenoRoundTimer);
+    currentKenoGameNumber++;
+    currentKenoGameId = `KENO-${currentKenoGameNumber}`;
+    currentKenoDrawnNumbers = drawKenoNumbers(currentKenoGameNumber);
+    kenoRoundActive = true;
+    kenoRoundPhase = 'betting';
+    kenoRoundStartTime = Date.now();
+    kenoRoundBets = [];
+    console.log(`${colors.magenta}🎲 NEW KENO ROUND: ${currentKenoGameId} - BETTING PHASE (30s)${colors.reset}`);
+    kenoRoundTimer = setTimeout(() => startDrawingPhase(), KENO_BETTING_DURATION);
+}
+
+function startDrawingPhase() {
+    kenoRoundPhase = 'drawing';
+    kenoRoundStartTime = Date.now();
+    console.log(`${colors.yellow}🎨 KENO ROUND ${currentKenoGameId} - DRAWING PHASE (30s)${colors.reset}`);
+    kenoRoundTimer = setTimeout(() => startResultsPhase(), KENO_DRAWING_DURATION);
+}
+
+async function startResultsPhase() {
+    kenoRoundPhase = 'results';
+    console.log(`${colors.blue}📊 KENO ROUND ${currentKenoGameId} - RESULTS PHASE (5s)${colors.reset}`);
+    for (const bet of kenoRoundBets) {
+        const matches = bet.selectedNumbers.filter(n => currentKenoDrawnNumbers.includes(n)).length;
+        const winAmount = calculateKenoPayout(bet.selectedNumbers.length, matches, bet.betAmount);
+        if (winAmount > 0) {
+            await pool.query('UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2', [winAmount, bet.userId]);
+        }
+        await pool.query(`UPDATE bets SET win_amount = $1, won = $2, drawn_numbers = $3 WHERE id = $4`, [winAmount, winAmount > 0, currentKenoDrawnNumbers, bet.betId]);
+    }
+    kenoRoundTimer = setTimeout(() => {
+        kenoRoundActive = false;
+        startNewKenoRound();
+    }, KENO_RESULTS_DURATION);
+}
+
+// Start first round
+startNewKenoRound();
+
+app.get('/keno/state', (req, res) => {
+    let timeLeft = 0;
+    const elapsed = Date.now() - kenoRoundStartTime;
+    if (kenoRoundPhase === 'betting') timeLeft = Math.max(0, Math.floor((KENO_BETTING_DURATION - elapsed) / 1000));
+    else if (kenoRoundPhase === 'drawing') timeLeft = Math.max(0, Math.floor((KENO_DRAWING_DURATION - elapsed) / 1000));
+    else timeLeft = Math.max(0, Math.floor((KENO_RESULTS_DURATION - elapsed) / 1000));
+    
+    res.json({
+        success: true,
+        gameId: currentKenoGameId,
+        gameNumber: currentKenoGameNumber,
+        phase: kenoRoundPhase,
+        timeLeft: timeLeft,
+        isSpecial: currentKenoGameNumber % 5 === 0,
+        drawnNumbers: (kenoRoundPhase === 'drawing' || kenoRoundPhase === 'results') ? currentKenoDrawnNumbers : null,
+        roundActive: kenoRoundActive
+    });
+});
+
+app.post('/keno/bet', async (req, res) => {
+    const { phone, selectedNumbers, betAmount } = req.body;
+    if (!selectedNumbers || selectedNumbers.length < 1 || selectedNumbers.length > 10) {
+        return res.status(400).json({ error: 'Select 1-10 numbers' });
+    }
+    if (kenoRoundPhase !== 'betting') {
+        return res.status(400).json({ error: 'Betting closed for this round' });
+    }
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const user = await client.query('SELECT * FROM users WHERE phone = $1 FOR UPDATE', [phone]);
+        if (user.rows.length === 0) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'User not found' }); }
+        const balance = parseFloat(user.rows[0].wallet_balance);
+        if (balance < betAmount) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Insufficient balance' }); }
+        await client.query('UPDATE users SET wallet_balance = wallet_balance - $1 WHERE id = $2', [betAmount, user.rows[0].id]);
+        const betResult = await client.query(`INSERT INTO bets (user_id, game_id, bet_amount, selected_numbers, created_at) VALUES ($1,$2,$3,$4,NOW()) RETURNING id`, [user.rows[0].id, currentKenoGameId, betAmount, selectedNumbers]);
+        kenoRoundBets.push({ betId: betResult.rows[0].id, userId: user.rows[0].id, phone, selectedNumbers, betAmount });
+        await client.query('COMMIT');
+        const timeLeft = Math.max(0, Math.floor((KENO_BETTING_DURATION - (Date.now() - kenoRoundStartTime)) / 1000));
+        res.json({ success: true, newBalance: balance - betAmount, gameId: currentKenoGameId, gameNumber: currentKenoGameNumber, timeLeft });
+    } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+app.get('/keno/history/:phone', async (req, res) => {
+    try {
+        const user = await pool.query('SELECT id FROM users WHERE phone = $1', [req.params.phone]);
+        if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+        const history = await pool.query(`SELECT * FROM bets WHERE user_id = $1 AND game_id LIKE 'KENO-%' ORDER BY created_at DESC LIMIT 20`, [user.rows[0].id]);
+        res.json(history.rows);
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ============================================
 // START SERVER
 // ============================================
@@ -1004,10 +864,8 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`${colors.green}═══════════════════════════════════════════════${colors.reset}`);
     console.log(`${colors.green}🚀 SERVER STARTED SUCCESSFULLY!${colors.reset}`);
     console.log(`${colors.green}═══════════════════════════════════════════════${colors.reset}`);
-    console.log(`${colors.cyan}📡 Server URL: http://localhost:${PORT}${colors.reset}`);
-    console.log(`${colors.cyan}👤 User login: http://localhost:${PORT}/login.html${colors.reset}`);
-    console.log(`${colors.cyan}👑 Admin login: http://localhost:${PORT}/admin-login.html${colors.reset}`);
+    console.log(`${colors.cyan}📡 Server URL: ${BASE_URL}${colors.reset}`);
     console.log(`${colors.cyan}🎲 Keno starting from: KENO-123213${colors.reset}`);
-    console.log(`${colors.cyan}🤖 Telegram bot: @${bot.botInfo?.username || 'ALPHA_ALLGAME_BOT'}${colors.reset}`);
+    console.log(`${colors.cyan}⏱️  Keno rounds: 30s betting + 30s drawing + 5s results = 65s total${colors.reset}`);
     console.log(`${colors.green}═══════════════════════════════════════════════${colors.reset}`);
 });
