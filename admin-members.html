@@ -2,245 +2,491 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Members</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Admin - Members & Deposits</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .admin-nav {
-            background: #2c3e50;
-            color: white;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+            padding: 12px;
         }
-        .admin-nav .nav-link {
-            color: white;
-        }
-        .admin-nav .nav-link:hover {
-            background: #34495e;
-        }
-        .admin-nav .nav-link.active {
-            background: #3498db;
-        }
-        
-        .stats-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        .total-balance {
-            font-size: 2.5rem;
-            font-weight: bold;
-        }
-        
-        .total-label {
-            font-size: 1rem;
-            opacity: 0.9;
-        }
-        
-        .member-count {
-            font-size: 1.2rem;
-            background: rgba(255,255,255,0.2);
-            padding: 5px 15px;
-            border-radius: 50px;
-            display: inline-block;
-        }
-        
-        .delete-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-left: 5px;
-        }
-        
-        .delete-btn:hover {
-            background-color: #c82333;
-        }
-        
-        .action-cell {
+        .navbar {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin-bottom: 15px;
             display: flex;
-            gap: 5px;
+            justify-content: space-between;
             align-items: center;
+        }
+        .navbar-brand {
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .navbar-brand i { color: #ffc107; }
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 30px;
+            padding: 8px 16px;
+            color: white;
+            text-decoration: none;
+        }
+        .container { padding: 0; }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffc107;
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        /* Tabs */
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .tab-btn {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 40px;
+            padding: 12px;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            color: #1a1a2e;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Cards */
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-weight: bold;
+            color: #ffc107;
+        }
+        .card-body { padding: 15px; }
+        
+        /* Deposit Request Item */
+        .deposit-item {
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 3px solid #ffc107;
+        }
+        .deposit-amount {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .deposit-info {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.6);
+            margin: 5px 0;
+        }
+        .btn-approve {
+            background: #28a745;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 20px;
+            color: white;
+            margin-right: 8px;
+        }
+        .btn-reject {
+            background: #dc3545;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 20px;
+            color: white;
+        }
+        
+        /* Member Table */
+        .member-table {
+            width: 100%;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            color: white;
+            font-size: 0.8rem;
+        }
+        th, td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        th { color: #ffc107; }
+        
+        /* Modal */
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .modal-header, .modal-body, .modal-footer {
+            border-color: rgba(255,255,255,0.1);
+        }
+        .modal-title, .modal-body { color: white; }
+        .form-control {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding: 12px;
+            color: white;
+        }
+        .form-control:focus {
+            background: rgba(0,0,0,0.5);
+            border-color: #ffc107;
+            outline: none;
+        }
+        
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .btn-approve, .btn-reject { padding: 6px 12px; font-size: 0.7rem; }
+            td, th { font-size: 0.7rem; padding: 6px 4px; }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar admin-nav">
-        <div class="container">
-            <span class="navbar-brand text-white">👑 Admin Panel</span>
-            <div class="nav nav-pills">
-                <a class="nav-link" href="admin-bets.html">Bets</a>
-                <a class="nav-link active" href="admin-members.html">Members</a>
-                <a class="nav-link" href="admin-withdrawals.html">Withdrawals</a>
-            </div>
+    <div class="navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-shield-alt"></i>
+            <span>Admin Panel</span>
         </div>
-    </nav>
+        <a href="select.html" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
 
-    <div class="container mt-5">
-        <!-- Total Balance Stats -->
-        <div class="stats-card">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <div class="total-label">Total Balance of All Members</div>
-                    <div class="total-balance" id="totalBalance">$0.00</div>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <div class="member-count" id="memberCount">Total Members: 0</div>
-                </div>
+    <div class="container">
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalMembers">0</div>
+                <div class="stat-label">Total Members</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="pendingDeposits">0</div>
+                <div class="stat-label">Pending Deposits</div>
             </div>
         </div>
 
-        <h2 class="mb-4">Members Management</h2>
-        
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Phone Number</th>
-                        <th>Wallet Balance</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="membersTableBody">
-                    <!-- Member data will be loaded here -->
-                </tbody>
-            </table>
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <div class="tab-btn active" onclick="switchTab('deposits')">
+                <i class="fas fa-dollar-sign"></i> Deposit Requests
+            </div>
+            <div class="tab-btn" onclick="switchTab('members')">
+                <i class="fas fa-users"></i> Members
+            </div>
+        </div>
+
+        <!-- Deposit Requests Tab -->
+        <div id="depositsTab" class="tab-content active">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-clock"></i> Pending Deposit Requests
+                </div>
+                <div class="card-body" id="pendingDepositsList">
+                    <div class="text-center" style="color: rgba(255,255,255,0.5);">Loading...</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-history"></i> Recent Deposits
+                </div>
+                <div class="card-body" id="recentDepositsList">
+                    <div class="text-center" style="color: rgba(255,255,255,0.5);">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members Tab -->
+        <div id="membersTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-users"></i> All Members
+                    <button class="btn btn-sm btn-primary float-end" onclick="refreshMembers()" style="background:#28a745; border:none; padding:5px 12px;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="member-table">
+                        <table id="membersTable">
+                            <thead>
+                                <tr><th>Phone</th><th>Balance</th><th>Deposits</th><th>Referrals</th><th>Joined</th><th>Action</th></tr>
+                            </thead>
+                            <tbody id="membersList">
+                                <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Add Balance Modal -->
+    <div class="modal fade" id="addBalanceModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle"></i> Add Balance</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>User: <strong id="modalUserName"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label">Amount ($)</label>
+                        <input type="number" class="form-control" id="addAmount" placeholder="Enter amount" min="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitAddBalance()" style="background:#28a745;">Add Balance</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function loadMembers() {
-            fetch('/admin/members')
-                .then(res => res.json())
-                .then(members => {
-                    displayMembers(members);
-                    calculateTotalBalance(members);
-                });
+        let currentUserPhone = null;
+        let addBalanceModal = null;
+        
+        // Admin login check
+        const adminLoggedIn = localStorage.getItem('adminLoggedIn');
+        if (!adminLoggedIn) {
+            window.location.href = 'admin-login.html';
         }
-
-        function displayMembers(members) {
-            const tbody = document.getElementById('membersTableBody');
-            tbody.innerHTML = '';
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            members.forEach(member => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${member.phone}</td>
-                    <td>$${parseFloat(member.wallet_balance).toFixed(2)}</td>
-                    <td>
-                        <div class="action-cell">
-                            <div class="input-group" style="max-width: 200px;">
-                                <input type="number" class="form-control" 
-                                       id="amount-${member.phone}" 
-                                       placeholder="Amount" min="1">
-                                <button class="btn btn-success" 
-                                        onclick="addBalance('${member.phone}')">
-                                    Add
-                                </button>
+            if (tab === 'deposits') {
+                document.querySelector('.tab-btn:first-child').classList.add('active');
+                document.getElementById('depositsTab').classList.add('active');
+                loadPendingDeposits();
+            } else {
+                document.querySelector('.tab-btn:last-child').classList.add('active');
+                document.getElementById('membersTab').classList.add('active');
+                loadMembers();
+            }
+        }
+        
+        async function loadPendingDeposits() {
+            try {
+                const response = await fetch('/admin/deposits');
+                const deposits = await response.json();
+                const pendingContainer = document.getElementById('pendingDepositsList');
+                const recentContainer = document.getElementById('recentDepositsList');
+                
+                const pending = deposits.filter(d => d.status === 'pending');
+                const recent = deposits.filter(d => d.status !== 'pending').slice(0, 20);
+                
+                document.getElementById('pendingDeposits').textContent = pending.length;
+                
+                if (pending.length === 0) {
+                    pendingContainer.innerHTML = '<div class="text-center" style="color: rgba(255,255,255,0.5);">No pending deposits</div>';
+                } else {
+                    pendingContainer.innerHTML = pending.map(deposit => `
+                        <div class="deposit-item">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <div>
+                                    <div class="deposit-amount">$${parseFloat(deposit.amount).toFixed(2)}</div>
+                                    <div class="deposit-info">📱 ${deposit.phone}</div>
+                                    <div class="deposit-info">🆔 TX: ${deposit.transaction_id}</div>
+                                    <div class="deposit-info">📅 ${new Date(deposit.created_at).toLocaleString()}</div>
+                                </div>
+                                <div class="mt-2 mt-sm-0">
+                                    <button class="btn-approve" onclick="approveDeposit(${deposit.id}, 'approve')">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                    <button class="btn-reject" onclick="approveDeposit(${deposit.id}, 'reject')">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                </div>
                             </div>
-                            <button class="delete-btn" onclick="deleteMember('${member.phone}')">
-                                🗑️ Delete
-                            </button>
                         </div>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
+                    `).join('');
+                }
+                
+                if (recent.length === 0) {
+                    recentContainer.innerHTML = '<div class="text-center" style="color: rgba(255,255,255,0.5);">No recent deposits</div>';
+                } else {
+                    recentContainer.innerHTML = recent.map(deposit => `
+                        <div class="deposit-item" style="border-left-color: ${deposit.status === 'approved' ? '#28a745' : '#dc3545'}">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="deposit-amount">$${parseFloat(deposit.amount).toFixed(2)}</div>
+                                    <div class="deposit-info">📱 ${deposit.phone}</div>
+                                    <div class="deposit-info">🆔 ${deposit.transaction_id}</div>
+                                </div>
+                                <div>
+                                    <span class="badge ${deposit.status === 'approved' ? 'bg-success' : 'bg-danger'}">
+                                        ${deposit.status === 'approved' ? 'Approved' : 'Rejected'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading deposits:', error);
+                document.getElementById('pendingDepositsList').innerHTML = '<div class="text-center" style="color: rgba(255,255,255,0.5);">Error loading deposits</div>';
+            }
         }
-
-        function calculateTotalBalance(members) {
-            const total = members.reduce((sum, member) => {
-                return sum + parseFloat(member.wallet_balance);
-            }, 0);
-            
-            document.getElementById('totalBalance').textContent = `$${total.toFixed(2)}`;
-            document.getElementById('memberCount').textContent = `Total Members: ${members.length}`;
+        
+        async function approveDeposit(depositId, action) {
+            try {
+                const response = await fetch('/admin/approve-deposit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ depositId, action })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`Deposit ${action === 'approve' ? 'approved' : 'rejected'} successfully!`);
+                    loadPendingDeposits();
+                    loadMembers();
+                } else {
+                    alert('Error: ' + (data.error || 'Operation failed'));
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
         }
-
-        function addBalance(phone) {
-            const amount = document.getElementById(`amount-${phone}`).value;
+        
+        async function loadMembers() {
+            try {
+                const response = await fetch('/admin/members');
+                const members = await response.json();
+                document.getElementById('totalMembers').textContent = members.length;
+                
+                const tbody = document.getElementById('membersList');
+                if (members.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No members found</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = members.map(member => `
+                    <tr>
+                        <td>${member.phone}</td>
+                        <td>$${parseFloat(member.wallet_balance).toFixed(2)}</td>
+                        <td>$${parseFloat(member.total_deposits || 0).toFixed(2)}</td>
+                        <td>${member.total_referrals || 0}</td>
+                        <td>${new Date(member.created_at).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn btn-sm btn-success" onclick="openAddBalance('${member.phone}')" style="font-size:0.7rem;">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading members:', error);
+            }
+        }
+        
+        function openAddBalance(phone) {
+            currentUserPhone = phone;
+            document.getElementById('modalUserName').textContent = phone;
+            document.getElementById('addAmount').value = '';
+            if (!addBalanceModal) {
+                addBalanceModal = new bootstrap.Modal(document.getElementById('addBalanceModal'));
+            }
+            addBalanceModal.show();
+        }
+        
+        async function submitAddBalance() {
+            const amount = parseFloat(document.getElementById('addAmount').value);
             
             if (!amount || amount <= 0) {
                 alert('Please enter a valid amount');
                 return;
             }
-
-            const button = event.target;
-            const originalText = button.textContent;
-            button.disabled = true;
-            button.textContent = 'Adding...';
-
-            fetch('/admin/add-balance', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, amount: parseFloat(amount) })
-            })
-            .then(res => res.json())
-            .then(data => {
+            
+            try {
+                const response = await fetch('/admin/add-balance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: currentUserPhone, amount: amount })
+                });
+                const data = await response.json();
+                
                 if (data.success) {
-                    alert('Balance added successfully!');
-                    document.getElementById(`amount-${phone}`).value = '';
+                    alert(`Successfully added $${amount} to ${currentUserPhone}`);
+                    if (addBalanceModal) addBalanceModal.hide();
                     loadMembers();
                 } else {
-                    alert('Failed to add balance');
+                    alert('Error: ' + (data.error || 'Operation failed'));
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to add balance');
-            })
-            .finally(() => {
-                button.disabled = false;
-                button.textContent = originalText;
-            });
-        }
-
-        function deleteMember(phone) {
-            if (!confirm(`Are you sure you want to delete member ${phone}?\n\nThis will permanently remove:\n- The user's account\n- All their bets\n- All their withdrawals\n- Any referral links\n\nThis action CANNOT be undone!`)) {
-                return;
+            } catch (error) {
+                alert('Network error. Please try again.');
             }
-
-            const deleteBtn = event.target;
-            const originalText = deleteBtn.textContent;
-            deleteBtn.disabled = true;
-            deleteBtn.textContent = 'Deleting...';
-
-            fetch('/admin/delete-member', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Member deleted successfully!');
-                    loadMembers();
-                } else {
-                    alert('Failed to delete member: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to delete member');
-            })
-            .finally(() => {
-                deleteBtn.disabled = false;
-                deleteBtn.textContent = originalText;
-            });
         }
-
-        // Load members initially and refresh every 10 seconds
-        loadMembers();
-        setInterval(loadMembers, 10000);
-
-        // Check admin authentication
-        if (!localStorage.getItem('adminAuth')) {
-            window.location.href = 'admin-login.html';
+        
+        function refreshMembers() {
+            loadMembers();
         }
+        
+        // Auto refresh every 10 seconds
+        let refreshInterval = setInterval(() => {
+            if (document.getElementById('depositsTab').classList.contains('active')) {
+                loadPendingDeposits();
+            }
+        }, 10000);
+        
+        // Initial load
+        loadPendingDeposits();
+        
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) clearInterval(refreshInterval);
+        });
     </script>
 </body>
 </html>

@@ -2,491 +2,966 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Horse</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover, shrink-to-fit=no">
+    <meta name="theme-color" content="#0f0c29">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>KENO - Number Game</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .horse-card {
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid transparent;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
-        .horse-card:hover {
-            transform: scale(1.05);
+        
+        body {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            padding: 8px;
+            padding-bottom: 70px;
+            -webkit-font-smoothing: antialiased;
         }
-        .horse-card.selected {
-            border-color: #007bff;
-            background-color: #f0f8ff;
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
         }
+        
+        /* Animations */
+        @keyframes numberPop {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(-180deg); opacity: 0; }
+            40% { transform: translate(-50%, -50%) scale(1.2) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes numberFadeOut {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+        }
+        @keyframes matchFlash {
+            0% { transform: scale(1); background: #dc3545; }
+            50% { transform: scale(1.1); background: #ff6b6b; }
+            100% { transform: scale(1); background: #dc3545; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* Header - Mobile Friendly */
+        .header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: nowrap;
+            gap: 8px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .logo i { font-size: 1.3rem; color: #ffc107; }
+        .logo span { color: white; font-weight: bold; font-size: 1rem; }
+        
+        /* Wallet Button */
+        .wallet-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 30px;
+            padding: 6px 12px;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .wallet-btn:active { transform: scale(0.97); background: rgba(255,255,255,0.25); }
+        .wallet-btn i { font-size: 0.9rem; color: #ffc107; }
+        
         .balance {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #28a745;
-        }
-        .countdown-container {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border-radius: 30px;
+            padding: 6px 14px;
             color: white;
-            border-radius: 50px;
-            padding: 15px 30px;
-            margin-bottom: 20px;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
         }
-        .countdown-timer {
-            font-size: 3rem;
+        .balance:active { transform: scale(0.97); }
+        .balance-amount { font-size: 1rem; font-weight: 800; }
+        .balance small { font-size: 0.65rem; display: block; line-height: 1.2; }
+        .refresh-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 30px;
+            padding: 6px 12px;
+            color: white;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+        
+        /* Game Info */
+        .game-info {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 16px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .game-id-box, .player-box {
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            padding: 6px 12px;
+            text-align: center;
+            flex: 1;
+        }
+        .game-id-label, .player-label { font-size: 0.6rem; color: rgba(255,255,255,0.5); }
+        .game-id-value, .player-value { font-size: 0.85rem; font-weight: bold; color: #ffc107; font-family: monospace; }
+        
+        /* Timer - Mobile */
+        .timer-card {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 25px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .timer-value {
+            font-size: 2rem;
             font-weight: bold;
-            display: inline-block;
-            min-width: 100px;
-        }
-        .countdown-label {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-        .race-badge {
-            background: #28a745;
-            color: white;
-            border-radius: 20px;
-            padding: 5px 15px;
-            font-size: 0.9rem;
-            margin-left: 15px;
-        }
-        .game-id-badge {
-            background: #2c3e50;
-            color: white;
-            border-radius: 20px;
-            padding: 5px 15px;
+            color: #ffc107;
             font-family: monospace;
-            font-size: 1rem;
+            line-height: 1;
         }
-        .progress {
-            height: 10px;
-            margin-top: 10px;
+        .timer-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            margin-top: 6px;
+            overflow: hidden;
         }
-        .time-bar {
-            transition: width 1s linear;
+        .timer-progress {
+            height: 100%;
+            width: 100%;
+            transition: width 0.1s linear;
         }
-        .user-info {
-            background: #f8f9fa;
-            border-radius: 50px;
-            padding: 5px 20px;
-            margin-right: 15px;
-            font-weight: 500;
-            color: #2c3e50;
+        .phase-label { font-size: 0.7rem; color: rgba(255,255,255,0.6); margin-top: 4px; }
+        .status {
+            font-size: 0.75rem;
+            margin-top: 6px;
+            color: rgba(255,255,255,0.8);
         }
-        .user-phone {
-            color: #007bff;
+        
+        /* Stats - Mobile Grid */
+        .stats {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(10px);
+            border-radius: 14px;
+            padding: 8px 12px;
+            flex: 1;
+            text-align: center;
+            min-width: 80px;
+        }
+        .stat-value { font-size: 1.2rem; font-weight: bold; color: #ffc107; }
+        .stat-label { font-size: 0.6rem; opacity: 0.8; }
+        
+        /* Numbers Grid - Mobile Optimized */
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 10px;
+            margin-bottom: 10px;
+            max-height: 350px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .number {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            cursor: pointer;
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            color: white;
+            transition: all 0.1s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            touch-action: manipulation;
+            min-width: 35px;
+        }
+        .number:active { transform: scale(0.94); background: #2a2a4e; }
+        .number.selected {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            transform: scale(0.98);
+            box-shadow: 0 0 8px rgba(40,167,69,0.4);
+        }
+        .number.drawn { background: linear-gradient(135deg, #ffc107, #ff9800); }
+        .number.matched {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            animation: matchFlash 0.2s ease;
+        }
+        
+        /* Bet Controls - Mobile */
+        .bet-controls {
+            background: rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .bet-input-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #2c3e50;
+            border-radius: 40px;
+            padding: 3px;
+        }
+        .bet-btn {
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.2rem;
             font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            touch-action: manipulation;
+        }
+        .bet-btn.minus { background: #dc3545; color: white; }
+        .bet-btn.plus { background: #28a745; color: white; }
+        .bet-btn:active { transform: scale(0.94); }
+        .bet-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            text-align: center;
+            font-weight: bold;
+            padding: 8px;
+        }
+        .bet-input:focus { outline: none; }
+        .add-bet-btn, .clear-btn {
+            padding: 10px;
+            border-radius: 40px;
+            font-weight: bold;
+            width: 100%;
+            transition: all 0.1s ease;
+            touch-action: manipulation;
+            font-size: 0.85rem;
+        }
+        .add-bet-btn:active, .clear-btn:active { transform: scale(0.97); }
+        .add-bet-btn {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            border: none;
+        }
+        .clear-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        /* Bets List - Mobile */
+        .bets-list {
+            background: rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 10px;
+            margin-bottom: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .bet-item {
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            transition: all 0.1s ease;
+            animation: slideIn 0.2s ease;
+            font-size: 0.8rem;
+        }
+        .bet-item.highlight {
+            background: rgba(40,167,69,0.5);
+            border-left: 3px solid #28a745;
+        }
+        .bet-numbers {
+            font-family: monospace;
+            color: #ffc107;
+            font-weight: bold;
+            font-size: 0.75rem;
+        }
+        .remove-bet {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            float: right;
+            font-size: 1rem;
+            padding: 0 8px;
+            touch-action: manipulation;
+        }
+        .remove-bet:active { transform: scale(1.1); }
+        .bet-amount { color: #28a745; font-weight: bold; font-size: 0.7rem; }
+        
+        .total {
+            text-align: right;
+            padding: 8px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-weight: bold;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        /* Results Bar - Mobile Bottom */
+        .results-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-top: 1px solid rgba(255,193,7,0.3);
+            padding: 10px 12px;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 100;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+        }
+        .results-bar.show { transform: translateY(0); }
+        .results-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.7rem;
+        }
+        .results-numbers {
+            font-family: monospace;
+            font-size: 0.7rem;
+            color: #ffc107;
+            word-break: break-all;
+            max-width: 60%;
+        }
+        .results-win { color: #28a745; font-weight: bold; }
+        .results-lose { color: #dc3545; font-weight: bold; }
+        .close-results {
+            position: absolute;
+            top: 2px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 5px;
+            touch-action: manipulation;
+        }
+        
+        /* Drawing Number - Mobile */
+        .drawing-number {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffc107;
+            z-index: 1000;
+            animation: numberPop 0.3s ease;
+            border: 2px solid rgba(255,193,7,0.5);
+            box-shadow: 0 0 30px rgba(255,193,7,0.5);
+            font-family: monospace;
+            backdrop-filter: blur(10px);
+        }
+        .drawing-number.matched {
+            color: #ff6b6b;
+            border-color: rgba(220,53,69,0.5);
+            box-shadow: 0 0 30px rgba(220,53,69,0.5);
+        }
+        .drawing-number.fade-out { animation: numberFadeOut 0.15s ease forwards; }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #ffc107;
+            animation: spin 0.8s linear infinite;
+            margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Scrollbar */
+        .numbers-grid::-webkit-scrollbar, .bets-list::-webkit-scrollbar {
+            width: 3px;
+        }
+        .numbers-grid::-webkit-scrollbar-track, .bets-list::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+        .numbers-grid::-webkit-scrollbar-thumb, .bets-list::-webkit-scrollbar-thumb {
+            background: rgba(255,193,7,0.4);
+            border-radius: 3px;
+        }
+        
+        /* Tablet and Desktop */
+        @media (min-width: 600px) {
+            body { padding: 12px; padding-bottom: 80px; }
+            .numbers-grid { grid-template-columns: repeat(8, 1fr); gap: 6px; }
+            .number { font-size: 0.8rem; }
+            .timer-value { font-size: 2.2rem; }
+        }
+        
+        @media (min-width: 768px) {
+            body { padding: 15px; padding-bottom: 90px; }
+            .numbers-grid { grid-template-columns: repeat(10, 1fr); gap: 8px; padding: 15px; }
+            .number { font-size: 0.85rem; border-radius: 12px; }
+            .timer-value { font-size: 2.5rem; }
+            .drawing-number { width: 100px; height: 100px; font-size: 2.5rem; }
+        }
+        
+        @media (max-width: 380px) {
+            .numbers-grid { grid-template-columns: repeat(6, 1fr); gap: 4px; padding: 8px; }
+            .number { font-size: 0.65rem; }
+            .stat-value { font-size: 1rem; }
+        }
+        
+        /* Touch optimizations */
+        button, .number, .bet-btn, .add-bet-btn, .clear-btn, .remove-bet, .wallet-btn {
+            cursor: pointer;
+            touch-action: manipulation;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-light bg-light">
-        <div class="container">
-            <span class="navbar-brand">🐎 Horse Racing</span>
-            <div class="d-flex align-items-center">
-                <div class="user-info">
-                    👤 <span class="user-phone" id="userPhoneDisplay"></span>
-                </div>
-                <span class="balance me-3">💰 $<span id="walletBalance">0</span></span>
-                <button class="btn btn-outline-primary me-2" onclick="window.location.href='wallet.html'">Wallet</button>
-                <button class="btn btn-primary" onclick="window.location.href='select.html'">Play</button>
+    <div class="container">
+        <!-- Header with Wallet Button -->
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-dice"></i>
+                <span>KENO</span>
             </div>
+            <a href="wallet.html" class="wallet-btn">
+                <i class="fas fa-wallet"></i>
+                <span>Wallet</span>
+            </a>
+            <div class="balance" onclick="refreshBalance()">
+                <small>💰 BALANCE</small>
+                <div class="balance-amount" id="balance">$0.00</div>
+            </div>
+            <button class="refresh-btn" onclick="location.reload()"><i class="fas fa-sync-alt"></i></button>
         </div>
-    </nav>
-
-    <div class="container mt-4">
-        <!-- Synchronized Countdown Display -->
-        <div class="countdown-container">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="game-id-badge" id="currentGameId">GAME-000000</span>
-                <span class="race-badge" id="raceStatus">Next Race</span>
-            </div>
-            <div class="countdown-label">Next Race Starts In</div>
-            <div class="countdown-timer" id="countdownDisplay">60</div>
-            <div class="progress mt-3">
-                <div class="progress-bar bg-warning time-bar" id="timeProgress" style="width: 100%"></div>
-            </div>
-            <div class="mt-2 text-white-50" id="syncStatus">⏰ Synchronized</div>
-        </div>
-
-        <h2 class="text-center mb-4">Select Your Horse</h2>
         
-        <div class="row mb-4" id="horseContainer">
-            <!-- Horses will be generated here -->
+        <!-- Game Info -->
+        <div class="game-info">
+            <div class="game-id-box">
+                <div class="game-id-label">🎮 GAME ID</div>
+                <div class="game-id-value" id="gameId">Loading...</div>
+            </div>
+            <div class="player-box">
+                <div class="player-label">👤 PLAYER</div>
+                <div class="player-value" id="playerNumber">190782</div>
+            </div>
         </div>
-
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Place Your Bet</h5>
-                        <form id="betForm">
-                            <div class="mb-3">
-                                <label for="betAmount" class="form-label">Bet Amount ($)</label>
-                                <input type="number" class="form-control" id="betAmount" min="1" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Selected Horse: <span id="selectedHorseDisplay">None</span></label>
-                            </div>
-                            <button type="submit" class="btn btn-success w-100" id="playBtn" disabled>Place Bet & Play</button>
-                        </form>
+        
+        <!-- Timer -->
+        <div class="timer-card">
+            <div class="timer-value" id="timer">30s</div>
+            <div class="timer-bar"><div class="timer-progress" id="timerProgress" style="width: 100%"></div></div>
+            <div class="phase-label" id="phaseLabel">⏱️ BETTING WINDOW</div>
+            <div class="status" id="status">Select numbers and add your bets!</div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="selectedCount">0</div>
+                <div class="stat-label">Selected / 10</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="betCount">0</div>
+                <div class="stat-label">Bets</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalWagered">$0</div>
+                <div class="stat-label">Wagered</div>
+            </div>
+        </div>
+        
+        <!-- Numbers Grid -->
+        <div class="numbers-grid" id="numbersGrid"></div>
+        
+        <!-- Bet Controls -->
+        <div class="bet-controls">
+            <div class="row g-2">
+                <div class="col-5">
+                    <div class="bet-input-group">
+                        <button class="bet-btn minus" id="minusBtn">-</button>
+                        <input type="number" id="betAmount" class="bet-input" value="10" min="1" step="1">
+                        <button class="bet-btn plus" id="plusBtn">+</button>
                     </div>
                 </div>
+                <div class="col-4">
+                    <button class="add-bet-btn" id="addBetBtn"><i class="fas fa-plus"></i> ADD</button>
+                </div>
+                <div class="col-3">
+                    <button class="clear-btn" id="clearBtn"><i class="fas fa-trash"></i></button>
+                </div>
             </div>
         </div>
+        
+        <!-- Bets List -->
+        <div class="bets-list" id="betsList">
+            <div class="text-center text-muted" style="font-size:0.7rem;">No bets yet. Select numbers!</div>
+        </div>
+        <div class="total" id="totalDisplay">Total: $0</div>
     </div>
-<script>
-        const socket = io();
-        let selectedHorse = null;
-        let userPhone = localStorage.getItem('userPhone');
+    
+    <!-- Results Bar at Bottom -->
+    <div class="results-bar" id="resultsBar">
+        <button class="close-results" onclick="closeResultsBar()">✖</button>
+        <div class="results-content" id="resultsContent"></div>
+    </div>
+
+    <script>
+        // ============ USER DATA ============
+        const urlParams = new URLSearchParams(window.location.search);
+        let userPhone = urlParams.get('phone') || localStorage.getItem('userPhone');
         let balance = parseFloat(localStorage.getItem('userBalance')) || 0;
         
-        // Server-synchronized countdown
-        let raceStartTime = null;
-        let countdownInterval;
-
-        // Auto-login from Telegram - supports both token and phone methods
-        (function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
-            const phoneParam = urlParams.get('phone');
-            const autoLogin = urlParams.get('auto');
-            
-            // Function to show loading overlay
-            function showLoading(message) {
-                const loadingDiv = document.createElement('div');
-                loadingDiv.id = 'auto-login-loading';
-                loadingDiv.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0,0,0,0.8);
-                    z-index: 9999;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                    color: white;
-                    font-size: 24px;
-                    font-weight: bold;
-                `;
-                loadingDiv.innerHTML = `
-                    <div style="margin-bottom: 20px;">${message}</div>
-                    <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                `;
-                document.body.appendChild(loadingDiv);
-                return loadingDiv;
-            }
-            
-            // Handle token-based login
-            if (token) {
-                const loadingDiv = showLoading('🔄 Verifying your login...');
-                
-                fetch('/validate-telegram-token', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        localStorage.setItem('userPhone', data.user.phone);
-                        localStorage.setItem('userBalance', data.user.wallet_balance);
-                        userPhone = data.user.phone;
-                        balance = data.user.wallet_balance;
-                        
-                        loadingDiv.innerHTML = `
-                            <div style="color: #28a745;">✅ Login successful!</div>
-                            <div style="font-size: 18px; margin-top: 10px;">Welcome back!</div>
-                        `;
-                        
-                        setTimeout(() => {
-                            loadingDiv.remove();
-                            window.history.replaceState({}, document.title, '/select.html');
-                            updateBalanceDisplay();
-                        }, 1000);
-                    } else {
-                        loadingDiv.innerHTML = `
-                            <div style="color: #dc3545;">❌ Login failed</div>
-                            <div style="font-size: 16px; margin-top: 10px;">${data.error || 'Please login manually'}</div>
-                        `;
-                        setTimeout(() => loadingDiv.remove(), 2000);
-                    }
-                })
-                .catch(error => {
-                    console.error('Auto-login error:', error);
-                    loadingDiv.innerHTML = `
-                        <div style="color: #dc3545;">❌ Error logging in</div>
-                        <div style="font-size: 16px; margin-top: 10px;">Please try again</div>
-                    `;
-                    setTimeout(() => loadingDiv.remove(), 2000);
-                });
-            }
-            // Handle phone-based auto-login
-            else if (phoneParam && autoLogin === '1') {
-                const loadingDiv = showLoading('🔄 Logging you in...');
-                
-                fetch('/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        phone: phoneParam, 
-                        password: 'telegram123' 
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        localStorage.setItem('userPhone', phoneParam);
-                        localStorage.setItem('userBalance', data.user.wallet_balance);
-                        userPhone = phoneParam;
-                        balance = data.user.wallet_balance;
-                        
-                        loadingDiv.innerHTML = `
-                            <div style="color: #28a745;">✅ Login successful!</div>
-                            <div style="font-size: 18px; margin-top: 10px;">Welcome back!</div>
-                        `;
-                        
-                        setTimeout(() => {
-                            loadingDiv.remove();
-                            window.history.replaceState({}, document.title, '/select.html');
-                            updateBalanceDisplay();
-                        }, 1000);
-                    } else {
-                        loadingDiv.innerHTML = `
-                            <div style="color: #dc3545;">❌ Login failed</div>
-                            <div style="font-size: 16px; margin-top: 10px;">Please login manually</div>
-                        `;
-                        setTimeout(() => loadingDiv.remove(), 2000);
-                    }
-                })
-                .catch(error => {
-                    console.error('Auto-login error:', error);
-                    loadingDiv.innerHTML = `
-                        <div style="color: #dc3545;">❌ Error logging in</div>
-                        <div style="font-size: 16px; margin-top: 10px;">Please try again</div>
-                    `;
-                    setTimeout(() => loadingDiv.remove(), 2000);
-                });
-            }
-            
-            // Update balance display function
-            function updateBalanceDisplay() {
-                const balanceEl = document.getElementById('walletBalance');
-                if (balanceEl) {
-                    balanceEl.textContent = balance.toFixed(2);
-                }
-                const userPhoneEl = document.getElementById('userPhoneDisplay');
-                if (userPhoneEl) {
-                    userPhoneEl.textContent = userPhone;
-                }
-            }
-        })();
-
-        // Redirect to login if no phone number (after auto-login attempt)
-        setTimeout(() => {
-            userPhone = localStorage.getItem('userPhone');
-            if (!userPhone) {
-                window.location.href = 'login.html';
-            }
-        }, 2000);
-
-        // Display user phone number
-        const userPhoneEl = document.getElementById('userPhoneDisplay');
-        if (userPhoneEl) {
-            userPhoneEl.textContent = userPhone || 'Not logged in';
+        if (!userPhone) {
+            window.location.href = 'login.html';
         }
-
-        // Generate horse cards
-        const horseContainer = document.getElementById('horseContainer');
-        for (let i = 1; i <= 6; i++) {
-            const col = document.createElement('div');
-            col.className = 'col-md-2 col-6 mb-3';
-            col.innerHTML = `
-                <div class="card horse-card" data-horse="${i}">
-                    <div class="card-body text-center">
-                        <div style="font-size: 2rem;">🐎</div>
-                        <h5>Horse ${i}</h5>
-                        <small class="text-muted">${4.5}x payout</small>
-                    </div>
+        localStorage.setItem('userPhone', userPhone);
+        
+        // ============ GAME STATE ============
+        let selectedNumbers = [];
+        let bets = [];
+        let canBet = true;
+        let currentGameId = null;
+        let pollingInterval = null;
+        let isDrawing = false;
+        
+        const PLAYER_NUMBER = 190782;
+        document.getElementById('playerNumber').textContent = PLAYER_NUMBER;
+        
+        // ============ UI ELEMENTS ============
+        const balanceEl = document.getElementById('balance');
+        const gameIdEl = document.getElementById('gameId');
+        const timerEl = document.getElementById('timer');
+        const timerProgress = document.getElementById('timerProgress');
+        const statusEl = document.getElementById('status');
+        const phaseLabel = document.getElementById('phaseLabel');
+        const selectedCountEl = document.getElementById('selectedCount');
+        const betCountEl = document.getElementById('betCount');
+        const totalWageredEl = document.getElementById('totalWagered');
+        const totalDisplayEl = document.getElementById('totalDisplay');
+        
+        // ============ HELPER FUNCTIONS ============
+        function updateBalance() {
+            const balanceAmount = balanceEl.querySelector('.balance-amount');
+            if (balanceAmount) {
+                balanceAmount.textContent = `$${balance.toFixed(2)}`;
+            }
+            balanceEl.classList.add('balance-update');
+            setTimeout(() => balanceEl.classList.remove('balance-update'), 300);
+        }
+        updateBalance();
+        
+        function updateTotal() {
+            const total = bets.reduce((s, b) => s + b.amount, 0);
+            totalWageredEl.textContent = `$${total.toFixed(2)}`;
+            totalDisplayEl.innerHTML = `Total: $${total.toFixed(2)}`;
+            betCountEl.textContent = bets.length;
+        }
+        
+        function renderBets() {
+            const container = document.getElementById('betsList');
+            if (bets.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted" style="font-size:0.7rem;">No bets yet. Select numbers!</div>';
+                return;
+            }
+            container.innerHTML = bets.map((bet, i) => `
+                <div class="bet-item" data-idx="${i}">
+                    <button class="remove-bet" data-idx="${i}">✖</button>
+                    <span class="bet-numbers">🎲 ${bet.numbers.join(', ')}</span><br>
+                    <span class="bet-amount">$${bet.amount.toFixed(2)}</span>
                 </div>
-            `;
-            horseContainer.appendChild(col);
-        }
-
-        // Update wallet balance
-        function updateWalletBalance() {
-            document.getElementById('walletBalance').textContent = balance.toFixed(2);
-        }
-        updateWalletBalance();
-
-        // Horse selection
-        document.querySelectorAll('.horse-card').forEach(card => {
-            card.addEventListener('click', function() {
-                document.querySelectorAll('.horse-card').forEach(c => c.classList.remove('selected'));
-                this.classList.add('selected');
-                selectedHorse = this.dataset.horse;
-                document.getElementById('selectedHorseDisplay').textContent = selectedHorse;
-                document.getElementById('playBtn').disabled = false;
+            `).join('');
+            
+            document.querySelectorAll('.remove-bet').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.dataset.idx);
+                    if (!canBet) { alert('Cannot remove - betting closed!'); return; }
+                    bets.splice(idx, 1);
+                    updateTotal();
+                    renderBets();
+                };
             });
-        });
-
-        // Socket events for synchronized countdown
-        socket.on('connect', () => {
-            console.log('Connected to server');
-            socket.emit('request-timer');
-        });
-
-        socket.on('race-timer', (data) => {
-            raceStartTime = data.nextRaceTime;
-            document.getElementById('currentGameId').textContent = data.gameId;
-            updateCountdown();
-            
-            if (!countdownInterval) {
-                countdownInterval = setInterval(updateCountdown, 100);
-            }
-        });
-
-        socket.on('race-starting-soon', (data) => {
-            document.getElementById('raceStatus').textContent = 'Starting Soon';
-            document.getElementById('raceStatus').style.background = '#dc3545';
-        });
-
-        socket.on('race-started', (data) => {
-            document.getElementById('raceStatus').textContent = 'Racing Now';
-            document.getElementById('raceStatus').style.background = '#dc3545';
-        });
-
-        function updateCountdown() {
-            if (!raceStartTime) return;
-            
-            const now = Date.now();
-            const timeLeft = Math.max(0, Math.ceil((raceStartTime - now) / 1000));
-            
-            const countdownEl = document.getElementById('countdownDisplay');
-            countdownEl.textContent = timeLeft;
-            
-            const progressPercent = (timeLeft / 60) * 100;
-            document.getElementById('timeProgress').style.width = `${progressPercent}%`;
-            
-            if (timeLeft <= 10) {
-                countdownEl.style.color = '#ff4444';
-                document.getElementById('timeProgress').classList.remove('bg-warning');
-                document.getElementById('timeProgress').classList.add('bg-danger');
-            } else if (timeLeft <= 30) {
-                countdownEl.style.color = '#ffaa00';
-                document.getElementById('timeProgress').classList.remove('bg-warning');
-                document.getElementById('timeProgress').classList.add('bg-warning');
-            } else {
-                countdownEl.style.color = 'white';
-                document.getElementById('timeProgress').classList.remove('bg-danger');
-                document.getElementById('timeProgress').classList.add('bg-success');
-            }
-            
-            if (timeLeft === 0) {
-                document.getElementById('syncStatus').innerHTML = '🏁 Race Started';
-            } else {
-                document.getElementById('syncStatus').innerHTML = `⏰ Synchronized (${new Date().toLocaleTimeString()})`;
-            }
         }
-
-        // Bet form submission
-        document.getElementById('betForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const betAmount = parseFloat(document.getElementById('betAmount').value);
-            
-            if (!selectedHorse) {
-                alert('Please select a horse!');
-                return;
-            }
-            
-            if (betAmount <= 0) {
-                alert('Please enter a valid bet amount!');
-                return;
-            }
-            
-            if (betAmount > balance) {
-                alert('Insufficient balance!');
-                return;
-            }
-
-            const playBtn = document.getElementById('playBtn');
-            playBtn.disabled = true;
-            playBtn.textContent = 'Processing...';
-
-            try {
-                const response = await fetch('/bet', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        phone: userPhone,
-                        horseNumber: parseInt(selectedHorse),
-                        betAmount: betAmount
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    localStorage.setItem('currentBet', JSON.stringify({
-                        horse: selectedHorse,
-                        amount: betAmount,
-                        betId: data.betId
-                    }));
-                    
-                    if (data.gameId) {
-                        localStorage.setItem('currentGameId', data.gameId);
-                    }
-                    
-                    localStorage.setItem('userBalance', data.newBalance);
-                    document.getElementById('walletBalance').textContent = data.newBalance.toFixed(2);
-                    balance = data.newBalance;
-                    
-                    window.location.href = 'game.html';
-                    
-                } else {
-                    alert(data.error || 'Failed to place bet');
-                    playBtn.disabled = false;
-                    playBtn.textContent = 'Place Bet & Play';
-                }
-            } catch (error) {
-                console.error('Bet error:', error);
-                alert('Failed to place bet. Please try again.');
-                playBtn.disabled = false;
-                playBtn.textContent = 'Place Bet & Play';
-            }
-        });
-
-        // Load latest balance
-        async function loadBalance() {
-            if (!userPhone) return;
-            try {
-                const response = await fetch(`/wallet/${userPhone}`);
-                const data = await response.json();
-                if (data.balance !== undefined) {
-                    balance = data.balance;
-                    localStorage.setItem('userBalance', balance);
-                    document.getElementById('walletBalance').textContent = balance.toFixed(2);
-                }
-            } catch (error) {
-                console.error('Failed to load balance:', error);
+        
+        function clearAllBets() {
+            if (!canBet) { alert('Cannot clear - betting closed!'); return; }
+            bets = [];
+            updateTotal();
+            renderBets();
+            clearSelection();
+        }
+        
+        // ============ NUMBER GRID ============
+        function createNumberGrid() {
+            const grid = document.getElementById('numbersGrid');
+            grid.innerHTML = '';
+            for (let i = 1; i <= 80; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'number';
+                btn.textContent = i;
+                btn.dataset.num = i;
+                btn.onclick = () => toggleNumber(i, btn);
+                grid.appendChild(btn);
             }
         }
         
-        loadBalance();
-
-        // Clean up
-        window.addEventListener('beforeunload', () => {
-            if (countdownInterval) {
-                clearInterval(countdownInterval);
+        function toggleNumber(num, btn) {
+            if (!canBet) { alert('Betting closed!'); return; }
+            const idx = selectedNumbers.indexOf(num);
+            if (idx === -1) {
+                if (selectedNumbers.length >= 10) { alert('Max 10 numbers per bet!'); return; }
+                selectedNumbers.push(num);
+                btn.classList.add('selected');
+            } else {
+                selectedNumbers.splice(idx, 1);
+                btn.classList.remove('selected');
             }
+            selectedCountEl.textContent = selectedNumbers.length;
+        }
+        
+        function clearSelection() {
+            selectedNumbers = [];
+            document.querySelectorAll('.number').forEach(btn => btn.classList.remove('selected'));
+            selectedCountEl.textContent = '0';
+        }
+        
+        function resetGrid() {
+            document.querySelectorAll('.number').forEach(btn => {
+                btn.classList.remove('drawn', 'matched', 'selected');
+            });
+        }
+        
+        // ============ BET PLACEMENT ============
+        document.getElementById('addBetBtn').onclick = () => {
+            if (!canBet) { alert('Betting closed!'); return; }
+            const amount = parseFloat(document.getElementById('betAmount').value);
+            if (selectedNumbers.length === 0) { alert('Select numbers first!'); return; }
+            if (isNaN(amount) || amount <= 0) { alert('Enter valid amount!'); return; }
+            
+            const total = bets.reduce((s, b) => s + b.amount, 0);
+            if (total + amount > balance) { alert(`Insufficient balance! Available: $${(balance - total).toFixed(2)}`); return; }
+            
+            bets.push({ numbers: [...selectedNumbers], amount });
+            updateTotal();
+            renderBets();
+            clearSelection();
+        };
+        
+        document.getElementById('clearBtn').onclick = clearAllBets;
+        
+        document.getElementById('minusBtn').onclick = () => {
+            let v = parseFloat(document.getElementById('betAmount').value);
+            if (v > 1) document.getElementById('betAmount').value = v - 1;
+        };
+        document.getElementById('plusBtn').onclick = () => {
+            let v = parseFloat(document.getElementById('betAmount').value);
+            document.getElementById('betAmount').value = v + 1;
+        };
+        
+        // ============ SMOOTH TIMER ============
+        let lastTimeLeft = 30;
+        function updateTimerSmooth(timeLeft) {
+            if (timeLeft !== lastTimeLeft) {
+                timerEl.style.transform = 'scale(1.05)';
+                setTimeout(() => timerEl.style.transform = '', 100);
+                lastTimeLeft = timeLeft;
+            }
+            timerEl.textContent = timeLeft + 's';
+            const percent = (timeLeft / 30) * 100;
+            timerProgress.style.width = Math.max(0, percent) + '%';
+            
+            if (percent <= 20) {
+                timerProgress.style.background = 'linear-gradient(90deg, #ffc107, #dc3545)';
+            } else if (percent <= 50) {
+                timerProgress.style.background = 'linear-gradient(90deg, #28a745, #ffc107)';
+            } else {
+                timerProgress.style.background = 'linear-gradient(90deg, #28a745, #20c997)';
+            }
+        }
+        
+        // ============ DRAWING ANIMATION ============
+        async function animateNumber(num, isMatch, index, total) {
+            return new Promise((resolve) => {
+                const div = document.createElement('div');
+                div.className = `drawing-number ${isMatch ? 'matched' : ''}`;
+                div.textContent = num;
+                document.body.appendChild(div);
+                
+                statusEl.innerHTML = `🎲 Drawing ${index + 1}/${total}...`;
+                
+                const btn = document.querySelector(`.number[data-num="${num}"]`);
+                if (btn) {
+                    btn.classList.add('drawn');
+                    if (isMatch) {
+                        btn.classList.add('matched');
+                        bets.forEach((bet, idx) => {
+                            if (bet.numbers.includes(num)) {
+                                const betEl = document.querySelector(`.bet-item[data-idx="${idx}"]`);
+                                if (betEl) {
+                                    betEl.classList.add('highlight');
+                                    setTimeout(() => betEl.classList.remove('highlight'), 500);
+                                }
+                            }
+                        });
+                    }
+                }
+                
+                setTimeout(() => {
+                    div.classList.add('fade-out');
+                    setTimeout(() => { div.remove(); resolve(); }, 150);
+                }, 600);
+            });
+        }
+        
+        async function animateNumbers(numbers) {
+            if (isDrawing) return;
+            isDrawing = true;
+            for (let i = 0; i < numbers.length; i++) {
+                const isMatch = bets.some(b => b.numbers.includes(numbers[i]));
+                await animateNumber(numbers[i], isMatch, i, numbers.length);
+                await new Promise(r => setTimeout(r, 60));
+            }
+            isDrawing = false;
+        }
+        
+        // ============ RESULTS BAR ============
+        function showResultsBar(gameId, drawnNumbers, winAmount, totalBet, matches) {
+            const resultsBar = document.getElementById('resultsBar');
+            const resultsContent = document.getElementById('resultsContent');
+            const isWin = winAmount > 0;
+            const netResult = winAmount - totalBet;
+            
+            resultsContent.innerHTML = `
+                <div style="flex:1">
+                    <div style="font-size:0.6rem; color:#aaa;">${gameId}</div>
+                    <div class="results-numbers">🎲 ${drawnNumbers.join(', ')}</div>
+                </div>
+                <div style="text-align:right">
+                    <div>Bet: $${totalBet.toFixed(2)}</div>
+                    <div class="${isWin ? 'results-win' : 'results-lose'}">
+                        ${isWin ? '🏆 +$' + winAmount.toFixed(2) : '😢 -$' + totalBet.toFixed(2)}
+                    </div>
+                    <div style="font-size:0.65rem;">Net: ${netResult >= 0 ? '+' : ''}$${netResult.toFixed(2)}</div>
+                </div>
+            `;
+            resultsBar.classList.add('show');
+            
+            setTimeout(() => {
+                if (resultsBar.classList.contains('show')) {
+                    resultsBar.classList.remove('show');
+                }
+            }, 6000);
+        }
+        
+        function closeResultsBar() {
+            document.getElementById('resultsBar').classList.remove('show');
+        }
+        
+        // ============ CLEAR BOARD FOR NEXT ROUND ============
+        function clearBoardForNextRound() {
+            bets = [];
+            updateTotal();
+            renderBets();
+            clearSelection();
+            resetGrid();
+            window.betsSubmitted = false;
+            window.numbersShown = false;
+            window.resultsShown = false;
+            canBet = true;
+        }
+        
+        // ============ PLACE BETS ============
+        async function submitBetsToServer() {
+            if (bets.length === 0) return false;
+            statusEl.innerHTML = '<span class="loading-spinner"></span> Placing bets...';
+            let allSuccess = true;
+            
+            for (const bet of bets) {
+                try {
+                    const res = await fetch('/keno/bet', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            phone: userPhone,
+                            selectedNumbers: bet.numbers,
+                            betAmount: bet.amount
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        balance = data.newBalance;
+                        localStorage.setItem('userBalance', balance);
+                        updateBalance();
+                    } else {
+                        allSuccess = false;
+                    }
+                } catch(e) { allSuccess = false; }
+            }
+            statusEl.innerHTML = allSuccess ? '✅ Bets placed!' : '⚠️ Some bets failed';
+            return allSuccess;
+        }
+        
+        // ============ FETCH RESULTS ============
+        async function fetchAndShowResults(gameId, drawnNumbers) {
+            try {
+                const res = await fetch(`/keno/history/${userPhone}`);
+                const history = await res.json();
+                const latest = history.find(h => h.game_id === gameId);
+                const totalBet = bets.reduce((s, b) => s + b.amount, 0);
+                const winAmount = latest?.win_amount || 0;
+                
+                showResultsBar(gameId, drawnNumbers, winAmount, totalBet, 0);
+                
+                const balanceRes = await fetch(`/wallet/${userPhone}`);
+                const balanceData = await balanceRes.json();
+                if (balanceData.balance !== undefined && balanceData.balance !== balance) {
+                    balance = balanceData.balance;
+                    localStorage.setItem('userBalance', balance);
+                    updateBalance();
+                }
+            } catch(e) { console.error('Fetch results error:', e); }
+        }
+        
+        // ============ POLL GAME STATE ============
+        async function pollGameState() {
+            try {
+                const res = await fetch('/keno/state');
+                const state = await res.json();
+                if (!state.success) return;
+                
+                if (currentGameId !== state.gameId) {
+                    currentGameId = state.gameId;
+                    gameIdEl.textContent = state.gameId;
+                }
+                
+                updateTimerSmooth(state.timeLeft);
+                
+                if (state.phase === 'betting') {
+                    canBet = true;
+                    phaseLabel.innerHTML = '⏱️ BETTING WINDOW';
+                    statusEl.innerHTML = '🎲 Select numbers and add your bets!';
+                    statusEl.style.color = '#ffc107';
+                }
+                else if (state.phase === 'drawing') {
+                    canBet = false;
+                    phaseLabel.innerHTML = '🎲 DRAWING NUMBERS';
+                    statusEl.innerHTML = '🎲 Numbers are being drawn...';
+                    statusEl.style.color = '#ff9800';
+                    
+                    if (bets.length > 0 && !window.betsSubmitted) {
+                        window.betsSubmitted = true;
+                        await submitBetsToServer();
+                    }
+                    
+                    if (state.drawnNumbers && state.drawnNumbers.length > 0 && !window.numbersShown) {
+                        window.numbersShown = true;
+                        await animateNumbers(state.drawnNumbers);
+                    }
+                }
+                else if (state.phase === 'results') {
+                    canBet = false;
+                    phaseLabel.innerHTML = '📊 RESULTS';
+                    statusEl.innerHTML = '✅ Round complete!';
+                    statusEl.style.color = '#28a745';
+                    
+                    if (state.drawnNumbers && !window.resultsShown) {
+                        window.resultsShown = true;
+                        await fetchAndShowResults(state.gameId, state.drawnNumbers);
+                        
+                        setTimeout(() => {
+                            clearBoardForNextRound();
+                        }, 2500);
+                    }
+                }
+            } catch(e) { console.error('Poll error:', e); }
+        }
+        
+        // ============ REFRESH BALANCE ============
+        async function refreshBalance() {
+            try {
+                const res = await fetch(`/wallet/${userPhone}`);
+                const data = await res.json();
+                if (data.balance !== undefined && data.balance !== balance) {
+                    balance = data.balance;
+                    localStorage.setItem('userBalance', balance);
+                    updateBalance();
+                }
+            } catch(e) {}
+        }
+        
+        // ============ INITIALIZE ============
+        createNumberGrid();
+        updateTotal();
+        renderBets();
+        refreshBalance();
+        
+        pollingInterval = setInterval(pollGameState, 500);
+        setInterval(refreshBalance, 10000);
+        
+        window.addEventListener('beforeunload', () => {
+            if (pollingInterval) clearInterval(pollingInterval);
         });
+        
+        window.refreshBalance = refreshBalance;
+        window.closeResultsBar = closeResultsBar;
     </script>
 </body>
 </html>
