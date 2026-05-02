@@ -1051,48 +1051,7 @@ process.once('SIGTERM', () => bot.stop('SIGTERM'));
 // ============================================
 // START SERVER
 // ============================================
-// TEMPORARY: Delete all users and related data
-app.get('/admin/reset-all', async (req, res) => {
-    const password = req.query.password;
-    
-    // Security check
-    if (password !== 'admin123') {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-        
-        // Delete in correct order (foreign key constraints)
-        await client.query('DELETE FROM bets');
-        await client.query('DELETE FROM deposits');
-        await client.query('DELETE FROM withdrawals');
-        await client.query('DELETE FROM referrals');
-        await client.query('DELETE FROM telegram_links');
-        await client.query('DELETE FROM users');
-        
-        // Reset sequence counters
-        await client.query('ALTER SEQUENCE users_id_seq RESTART WITH 1');
-        await client.query('ALTER SEQUENCE bets_id_seq RESTART WITH 1');
-        await client.query('ALTER SEQUENCE deposits_id_seq RESTART WITH 1');
-        await client.query('ALTER SEQUENCE withdrawals_id_seq RESTART WITH 1');
-        await client.query('ALTER SEQUENCE referrals_id_seq RESTART WITH 1');
-        await client.query('ALTER SEQUENCE telegram_links_id_seq RESTART WITH 1');
-        
-        await client.query('COMMIT');
-        
-        res.json({ 
-            success: true, 
-            message: 'All users and data deleted. Fresh start ready!' 
-        });
-    } catch (error) {
-        await client.query('ROLLBACK');
-        res.status(500).json({ error: error.message });
-    } finally {
-        client.release();
-    }
-});
+
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
