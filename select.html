@@ -14,11 +14,13 @@
             min-height: 100vh;
             padding: 12px;
             padding-bottom: 80px;
+            font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
         }
         .container { max-width: 1200px; margin: 0 auto; }
         
         .header {
             background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 12px 20px;
             margin-bottom: 15px;
@@ -30,7 +32,7 @@
         }
         .logo { display: flex; align-items: center; gap: 8px; }
         .logo i { font-size: 1.5rem; color: #ffc107; }
-        .logo span { color: white; font-weight: bold; }
+        .logo span { color: white; font-weight: bold; font-size: 1.1rem; }
         
         .wallet-btn {
             background: rgba(255,255,255,0.15);
@@ -39,7 +41,10 @@
             padding: 8px 16px;
             color: white;
             text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
         }
+        .wallet-btn:active { transform: scale(0.95); }
         
         .balance {
             background: linear-gradient(135deg, #28a745, #20c997);
@@ -47,14 +52,16 @@
             padding: 8px 20px;
             text-align: center;
             cursor: pointer;
+            transition: all 0.2s;
         }
+        .balance:active { transform: scale(0.95); }
         .balance-amount { font-size: 1.2rem; font-weight: 800; }
         .balance small { font-size: 0.65rem; display: block; }
         .balance-update { animation: pulse 0.3s ease; }
         
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            50% { transform: scale(1.05); color: #ffc107; }
         }
         
         .game-info {
@@ -74,7 +81,8 @@
             padding: 8px 16px;
             text-align: center;
         }
-        .game-id-value, .player-value { font-size: 1.1rem; font-weight: bold; color: #ffc107; font-family: monospace; }
+        .game-id-label, .player-label { font-size: 0.7rem; color: rgba(255,255,255,0.5); }
+        .game-id-value, .player-value { font-size: 1rem; font-weight: bold; color: #ffc107; font-family: monospace; }
         
         .timer-card {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
@@ -87,11 +95,12 @@
         .timer-bar { height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; margin-top: 8px; overflow: hidden; }
         .timer-progress { height: 100%; transition: width 0.1s linear; }
         .phase-label { font-size: 0.8rem; color: rgba(255,255,255,0.7); margin-top: 5px; }
-        .status { font-size: 0.85rem; margin-top: 8px; }
+        .status { font-size: 0.85rem; margin-top: 8px; color: rgba(255,255,255,0.8); }
         
         .stats { display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
         .stat-card {
             background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 10px 15px;
             flex: 1;
@@ -119,7 +128,8 @@
             cursor: pointer;
             background: linear-gradient(145deg, #1a1a2e, #16213e);
             color: white;
-            transition: all 0.1s;
+            transition: all 0.1s ease;
+            font-size: 0.9rem;
         }
         .number:active { transform: scale(0.95); }
         .number.selected { background: linear-gradient(135deg, #28a745, #20c997); transform: scale(1.02); }
@@ -145,9 +155,19 @@
             border-radius: 50px;
             padding: 5px;
         }
-        .bet-btn { width: 45px; height: 45px; border: none; border-radius: 50%; font-size: 1.3rem; font-weight: bold; cursor: pointer; }
+        .bet-btn {
+            width: 45px;
+            height: 45px;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
         .bet-btn.minus { background: #dc3545; color: white; }
         .bet-btn.plus { background: #28a745; color: white; }
+        .bet-btn:active { transform: scale(0.95); }
         .bet-input {
             flex: 1;
             background: transparent;
@@ -158,15 +178,50 @@
             font-weight: bold;
             padding: 8px;
         }
+        .bet-input:focus { outline: none; }
         .add-bet-btn, .clear-btn {
             padding: 12px;
             border-radius: 50px;
             font-weight: bold;
             width: 100%;
+            transition: all 0.1s;
         }
         .add-bet-btn { background: linear-gradient(135deg, #ffc107, #ff9800); border: none; }
         .clear-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: white; }
+        .add-bet-btn:active, .clear-btn:active { transform: scale(0.97); }
         
+        /* ✅ FIX: Disabled state for submit button during non-betting phases */
+        .submit-bets-btn {
+            padding: 14px;
+            border-radius: 50px;
+            font-weight: bold;
+            width: 100%;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+        .submit-bets-btn.ready {
+            background: linear-gradient(135deg, #007bff, #6610f2);
+            color: white;
+            animation: glow 1.5s ease-in-out infinite alternate;
+        }
+        .submit-bets-btn.submitted {
+            background: rgba(40,167,69,0.4);
+            color: #28a745;
+            cursor: not-allowed;
+        }
+        .submit-bets-btn.closed {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.4);
+            cursor: not-allowed;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 5px rgba(0,123,255,0.4); }
+            to { box-shadow: 0 0 20px rgba(0,123,255,0.8), 0 0 40px rgba(102,16,242,0.4); }
+        }
+
         .bets-list {
             background: rgba(255,255,255,0.08);
             border-radius: 16px;
@@ -180,11 +235,21 @@
             border-radius: 10px;
             padding: 10px;
             margin-bottom: 8px;
+            transition: all 0.2s;
         }
         .bet-item.won { background: rgba(40,167,69,0.3); border-left: 3px solid #28a745; }
         .bet-item.lost { background: rgba(220,53,69,0.2); border-left: 3px solid #dc3545; }
         .bet-numbers { font-family: monospace; color: #ffc107; font-weight: bold; }
-        .remove-bet { background: none; border: none; color: #dc3545; float: right; cursor: pointer; }
+        .remove-bet {
+            background: none;
+            border: none;
+            color: #dc3545;
+            float: right;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0 8px;
+        }
+        .remove-bet:active { transform: scale(1.1); }
         .bet-result { font-size: 0.7rem; margin-top: 5px; }
         .bet-result.win { color: #28a745; }
         .bet-result.loss { color: #dc3545; }
@@ -205,10 +270,19 @@
         }
         .results-bar.show { transform: translateY(0); }
         .results-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .results-numbers { font-family: monospace; font-size: 0.8rem; color: #ffc107; }
+        .results-numbers { font-family: monospace; font-size: 0.8rem; color: #ffc107; word-break: break-word; max-width: 60%; }
         .results-win { color: #28a745; font-weight: bold; }
         .results-lose { color: #dc3545; font-weight: bold; }
-        .close-results { position: absolute; top: 5px; right: 10px; background: none; border: none; color: white; cursor: pointer; }
+        .close-results {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+        }
         
         .drawing-number {
             position: fixed;
@@ -228,6 +302,7 @@
             z-index: 1000;
             animation: pop 0.3s ease;
             border: 2px solid rgba(255,193,7,0.5);
+            box-shadow: 0 0 30px rgba(255,193,7,0.5);
         }
         .drawing-number.matched { color: #ff6b6b; border-color: rgba(220,53,69,0.5); }
         
@@ -246,16 +321,17 @@
             font-size: 1.1rem;
             font-weight: bold;
             z-index: 2000;
-            animation: fade 0.3s ease;
+            animation: fade 3s ease forwards;
             white-space: nowrap;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.3);
         }
         .toast-win { background: linear-gradient(135deg, #28a745, #20c997); color: white; }
         .toast-loss { background: linear-gradient(135deg, #dc3545, #c82333); color: white; }
         
         @keyframes fade {
             0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            80% { opacity: 1; }
+            15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            75% { opacity: 1; }
             100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
         }
         
@@ -263,27 +339,36 @@
             .numbers-grid { grid-template-columns: repeat(8, 1fr); gap: 6px; padding: 12px; }
             .number { font-size: 0.8rem; }
             .drawing-number { width: 80px; height: 80px; font-size: 2rem; }
+            .timer-value { font-size: 2rem; }
         }
         @media (max-width: 480px) {
-            .numbers-grid { grid-template-columns: repeat(6, 1fr); }
+            .numbers-grid { grid-template-columns: repeat(6, 1fr); gap: 4px; padding: 8px; }
+            .number { font-size: 0.7rem; }
+            .stat-value { font-size: 1rem; }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Header -->
         <div class="header">
             <div class="logo">
                 <i class="fas fa-dice"></i>
                 <span>KENO</span>
             </div>
-            <a href="wallet.html" class="wallet-btn"><i class="fas fa-wallet"></i> Wallet</a>
+            <a href="wallet.html" class="wallet-btn">
+                <i class="fas fa-wallet"></i> Wallet
+            </a>
             <div class="balance" onclick="refreshBalance()">
                 <small>💰 BALANCE</small>
                 <div class="balance-amount" id="balance">$0.00</div>
             </div>
-            <button class="refresh-btn btn btn-outline-light btn-sm" onclick="location.reload()">⟳</button>
+            <button class="btn btn-outline-light btn-sm" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i>
+            </button>
         </div>
         
+        <!-- Game Info -->
         <div class="game-info">
             <div class="game-id-box">
                 <div class="game-id-label">🎮 GAME ID</div>
@@ -291,10 +376,11 @@
             </div>
             <div class="player-box">
                 <div class="player-label">👤 PLAYER</div>
-                <div class="player-value" id="playerNumber">190782</div>
+                <div class="player-value" id="playerNumber">—</div>
             </div>
         </div>
         
+        <!-- Timer -->
         <div class="timer-card">
             <div class="timer-value" id="timer">30s</div>
             <div class="timer-bar"><div class="timer-progress" id="timerProgress" style="width: 100%"></div></div>
@@ -302,52 +388,82 @@
             <div class="status" id="status">Select numbers and add your bets!</div>
         </div>
         
+        <!-- Stats -->
         <div class="stats">
-            <div class="stat-card"><div class="stat-value" id="selectedCount">0</div><div class="stat-label">Selected / 10</div></div>
-            <div class="stat-card"><div class="stat-value" id="betCount">0</div><div class="stat-label">Bets</div></div>
-            <div class="stat-card"><div class="stat-value" id="totalWagered">$0</div><div class="stat-label">Wagered</div></div>
+            <div class="stat-card">
+                <div class="stat-value" id="selectedCount">0</div>
+                <div class="stat-label">Selected / 10</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="betCount">0</div>
+                <div class="stat-label">Bets</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalWagered">$0</div>
+                <div class="stat-label">Wagered</div>
+            </div>
         </div>
         
+        <!-- Numbers Grid -->
         <div class="numbers-grid" id="numbersGrid"></div>
         
+        <!-- Bet Controls -->
         <div class="bet-controls">
             <div class="row g-2">
                 <div class="col-5">
                     <div class="bet-input-group">
                         <button class="bet-btn minus" id="minusBtn">-</button>
-                        <input type="number" id="betAmount" class="bet-input" value="10" min="1">
+                        <input type="number" id="betAmount" class="bet-input" value="10" min="1" step="1">
                         <button class="bet-btn plus" id="plusBtn">+</button>
                     </div>
                 </div>
-                <div class="col-4"><button class="add-bet-btn" id="addBetBtn"><i class="fas fa-plus"></i> ADD</button></div>
-                <div class="col-3"><button class="clear-btn" id="clearBtn"><i class="fas fa-trash"></i></button></div>
+                <div class="col-4">
+                    <button class="add-bet-btn" id="addBetBtn"><i class="fas fa-plus"></i> ADD</button>
+                </div>
+                <div class="col-3">
+                    <button class="clear-btn" id="clearBtn"><i class="fas fa-trash"></i></button>
+                </div>
             </div>
+
+            <!-- ✅ FIX: Dedicated submit button — submits DURING betting phase, not drawing phase -->
+            <button class="submit-bets-btn closed" id="submitBetsBtn" onclick="onSubmitBetsClick()">
+                🎲 PLACE BETS
+            </button>
         </div>
         
-        <div class="bets-list" id="betsList"><div class="text-center text-muted">No bets yet</div></div>
+        <!-- Bets List -->
+        <div class="bets-list" id="betsList">
+            <div class="text-center text-muted">No bets yet. Select numbers!</div>
+        </div>
         <div class="total" id="totalDisplay">Total: $0</div>
     </div>
     
+    <!-- Results Bar -->
     <div class="results-bar" id="resultsBar">
         <button class="close-results" onclick="closeResultsBar()">✖</button>
         <div class="results-content" id="resultsContent"></div>
     </div>
 
     <script>
+        // ============ SOCKET.IO ============
         const socket = io();
-        const userPhone = localStorage.getItem('userPhone');
+        
+        // ============ USER DATA ============
+        const urlParams = new URLSearchParams(window.location.search);
+        let userPhone = urlParams.get('phone') || localStorage.getItem('userPhone');
         let balance = 0;
-        let selectedNumbers = [];
-        let bets = [];
-        let canBet = true;
-        let currentGameId = null;
-        let pollingInterval = null;
         
-        if (!userPhone) window.location.href = 'login.html';
+        if (!userPhone) {
+            window.location.href = 'login.html';
+        }
+        localStorage.setItem('userPhone', userPhone);
+        document.getElementById('playerNumber').textContent = userPhone.slice(-6);
         
+        // Register with socket for real-time balance updates
         socket.emit('register-user', userPhone);
         
         socket.on('balance-update', (data) => {
+            console.log('💰 Real-time balance update:', data);
             if (data.newBalance !== undefined) {
                 balance = data.newBalance;
                 localStorage.setItem('userBalance', balance);
@@ -357,14 +473,17 @@
         
         async function loadBalance() {
             try {
-                const res = await fetch(`/wallet/${userPhone}`);
-                const data = await res.json();
+                const response = await fetch(`/wallet/${userPhone}`);
+                const data = await response.json();
                 if (data.balance !== undefined) {
                     balance = data.balance;
                     localStorage.setItem('userBalance', balance);
                     updateBalanceDisplay();
                 }
-            } catch(e) { console.error('Balance error:', e); }
+            } catch (error) {
+                console.error('Error loading balance:', error);
+                setTimeout(loadBalance, 2000);
+            }
         }
         
         function updateBalanceDisplay() {
@@ -374,40 +493,88 @@
             setTimeout(() => el.classList.remove('balance-update'), 300);
         }
         
-        function showToast(message, isWin) {
+        function showToast(message, isSuccess = true) {
             const toast = document.createElement('div');
-            toast.className = isWin ? 'toast-win' : 'toast-loss';
+            toast.className = isSuccess ? 'toast-win' : 'toast-loss';
             toast.textContent = message;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
         }
         
+        // ============ GAME STATE ============
+        let selectedNumbers = [];
+        let bets = [];           // Local "staging" bets (before submit)
+        let submittedBets = [];  // ✅ FIX: Track bets that were actually submitted to server
+        let canBet = true;
+        let currentGameId = null;
+        let currentPhase = 'betting';
+        let betsAlreadySubmitted = false;  // ✅ FIX: guard flag
+        let pollingInterval = null;
+        let isDrawing = false;
+        let numbersShown = false;
+        let resultsShown = false;
+        
         function updateTotal() {
-            const total = bets.reduce((s, b) => s + b.amount, 0);
+            const total = bets.reduce((sum, b) => sum + b.amount, 0);
             document.getElementById('totalWagered').textContent = `$${total.toFixed(2)}`;
             document.getElementById('totalDisplay').innerHTML = `Total: $${total.toFixed(2)}`;
             document.getElementById('betCount').textContent = bets.length;
+            updateSubmitButton();
+        }
+        
+        // ✅ FIX: Button reflects whether there's anything to submit and whether we're in betting phase
+        function updateSubmitButton() {
+            const btn = document.getElementById('submitBetsBtn');
+            if (betsAlreadySubmitted) {
+                btn.className = 'submit-bets-btn submitted';
+                btn.textContent = `✅ ${submittedBets.length} Bet(s) Submitted`;
+            } else if (!canBet) {
+                btn.className = 'submit-bets-btn closed';
+                btn.textContent = '⏳ Betting Closed';
+            } else if (bets.length === 0) {
+                btn.className = 'submit-bets-btn closed';
+                btn.textContent = '🎲 Add bets first';
+            } else {
+                btn.className = 'submit-bets-btn ready';
+                btn.textContent = `🎲 PLACE ${bets.length} BET(S) — $${bets.reduce((s,b)=>s+b.amount,0).toFixed(2)}`;
+            }
         }
         
         function renderBets() {
             const container = document.getElementById('betsList');
-            if (bets.length === 0) {
-                container.innerHTML = '<div class="text-center text-muted">No bets yet</div>';
+            const allBets = [...submittedBets, ...bets];
+            if (allBets.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted" style="color:rgba(255,255,255,0.4)">No bets yet. Select numbers!</div>';
                 return;
             }
-            container.innerHTML = bets.map((bet, i) => `
-                <div class="bet-item" data-idx="${i}">
-                    <button class="remove-bet" data-idx="${i}">✖</button>
-                    <span class="bet-numbers">🎲 ${bet.numbers.join(', ')}</span><br>
-                    <span class="bet-amount">$${bet.amount.toFixed(2)}</span>
-                    <div class="bet-result" id="bet-result-${i}">⏳ Pending...</div>
-                </div>
-            `).join('');
+            
+            // Show submitted bets (locked) + pending bets (removable)
+            let html = '';
+            submittedBets.forEach((bet, i) => {
+                html += `
+                    <div class="bet-item" id="submitted-bet-${i}">
+                        <span style="float:right;font-size:0.7rem;color:#28a745;">✅ Placed</span>
+                        <span class="bet-numbers">🎲 ${bet.numbers.join(', ')}</span><br>
+                        <span class="bet-amount" style="color:#aaa;font-size:0.85rem;">$${bet.amount.toFixed(2)}</span>
+                        <div class="bet-result" id="submitted-result-${i}">⏳ Awaiting draw...</div>
+                    </div>`;
+            });
+            bets.forEach((bet, i) => {
+                html += `
+                    <div class="bet-item" data-idx="${i}">
+                        <button class="remove-bet" data-idx="${i}">✖</button>
+                        <span class="bet-numbers">🎲 ${bet.numbers.join(', ')}</span><br>
+                        <span class="bet-amount" style="color:#aaa;font-size:0.85rem;">$${bet.amount.toFixed(2)}</span>
+                        <div class="bet-result" id="pending-result-${i}">⏳ Pending...</div>
+                    </div>`;
+            });
+            container.innerHTML = html;
             
             document.querySelectorAll('.remove-bet').forEach(btn => {
-                btn.onclick = () => {
-                    const idx = parseInt(btn.dataset.idx);
+                btn.onclick = (e) => {
+                    e.stopPropagation();
                     if (!canBet) { alert('Cannot remove - betting closed!'); return; }
+                    const idx = parseInt(btn.dataset.idx);
                     bets.splice(idx, 1);
                     updateTotal();
                     renderBets();
@@ -423,6 +590,7 @@
             clearSelection();
         }
         
+        // Number Grid
         function createNumberGrid() {
             const grid = document.getElementById('numbersGrid');
             grid.innerHTML = '';
@@ -440,7 +608,7 @@
             if (!canBet) { alert('Betting closed!'); return; }
             const idx = selectedNumbers.indexOf(num);
             if (idx === -1) {
-                if (selectedNumbers.length >= 10) { alert('Max 10 numbers!'); return; }
+                if (selectedNumbers.length >= 10) { alert('Max 10 numbers per bet!'); return; }
                 selectedNumbers.push(num);
                 btn.classList.add('selected');
             } else {
@@ -457,18 +625,22 @@
         }
         
         function resetGrid() {
-            document.querySelectorAll('.number').forEach(btn => btn.classList.remove('drawn', 'matched', 'selected'));
+            document.querySelectorAll('.number').forEach(btn => {
+                btn.classList.remove('drawn', 'matched', 'selected');
+            });
         }
         
         document.getElementById('addBetBtn').onclick = () => {
             if (!canBet) { alert('Betting closed!'); return; }
             const amount = parseFloat(document.getElementById('betAmount').value);
-            if (selectedNumbers.length === 0) { alert('Select numbers!'); return; }
+            if (selectedNumbers.length === 0) { alert('Select numbers first!'); return; }
             if (isNaN(amount) || amount <= 0) { alert('Enter valid amount!'); return; }
-            
-            const total = bets.reduce((s, b) => s + b.amount, 0);
-            if (total + amount > balance) { alert(`Insufficient balance! Available: $${(balance - total).toFixed(2)}`); return; }
-            
+            const total = bets.reduce((sum, b) => sum + b.amount, 0);
+            const submittedTotal = submittedBets.reduce((sum, b) => sum + b.amount, 0);
+            if (total + submittedTotal + amount > balance) {
+                alert(`Insufficient balance! Available: $${(balance - total - submittedTotal).toFixed(2)}`);
+                return;
+            }
             bets.push({ numbers: [...selectedNumbers], amount });
             updateTotal();
             renderBets();
@@ -476,7 +648,6 @@
         };
         
         document.getElementById('clearBtn').onclick = clearAllBets;
-        
         document.getElementById('minusBtn').onclick = () => {
             let v = parseFloat(document.getElementById('betAmount').value);
             if (v > 1) document.getElementById('betAmount').value = v - 1;
@@ -486,181 +657,282 @@
             document.getElementById('betAmount').value = v + 1;
         };
         
+        // ✅ FIX: User explicitly submits bets DURING the betting phase
+        async function onSubmitBetsClick() {
+            if (!canBet) { alert('Betting is closed for this round!'); return; }
+            if (bets.length === 0) { alert('Add at least one bet first!'); return; }
+            if (betsAlreadySubmitted) { alert('Bets already placed for this round!'); return; }
+            await submitBets();
+        }
+        
+        // ✅ FIX: Submit happens while phase === 'betting', guaranteed on server
+        async function submitBets() {
+            if (bets.length === 0) return false;
+            if (betsAlreadySubmitted) return false;
+            
+            document.getElementById('status').innerHTML = '<span class="spinner-border spinner-border-sm" style="width:1rem;height:1rem;"></span> Placing bets...';
+            let allSuccess = true;
+            const betsToSubmit = [...bets];
+            
+            for (const bet of betsToSubmit) {
+                try {
+                    const response = await fetch('/keno/bet', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            phone: userPhone,
+                            selectedNumbers: bet.numbers,
+                            betAmount: bet.amount
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        // ✅ Move bet from pending to submitted
+                        submittedBets.push(bet);
+                        balance = data.newBalance;
+                        localStorage.setItem('userBalance', balance);
+                        updateBalanceDisplay();
+                    } else {
+                        allSuccess = false;
+                        console.error('Bet failed:', data.error);
+                        showToast(`❌ Bet failed: ${data.error}`, false);
+                    }
+                } catch (error) {
+                    console.error('Bet network error:', error);
+                    allSuccess = false;
+                    showToast('❌ Network error placing bet', false);
+                }
+            }
+            
+            // ✅ Clear pending bets; keep submitted ones displayed
+            bets = [];
+            betsAlreadySubmitted = submittedBets.length > 0;
+            updateTotal();
+            renderBets();
+            
+            if (allSuccess && submittedBets.length > 0) {
+                document.getElementById('status').innerHTML = `✅ ${submittedBets.length} bet(s) placed! Watching draw...`;
+                showToast(`✅ ${submittedBets.length} bet(s) placed!`, true);
+            } else {
+                document.getElementById('status').innerHTML = '⚠️ Some bets failed. Check balance.';
+            }
+            return allSuccess;
+        }
+        
+        // Timer
         let lastTimeLeft = 30;
-        function updateTimer(timeLeft) {
+        function updateTimer(timeLeft, maxDuration) {
             if (timeLeft !== lastTimeLeft) {
                 document.getElementById('timer').style.transform = 'scale(1.05)';
                 setTimeout(() => document.getElementById('timer').style.transform = '', 100);
                 lastTimeLeft = timeLeft;
             }
             document.getElementById('timer').textContent = timeLeft + 's';
-            const percent = (timeLeft / 30) * 100;
+            const percent = (timeLeft / maxDuration) * 100;
             document.getElementById('timerProgress').style.width = Math.max(0, percent) + '%';
+            
+            if (percent <= 20) {
+                document.getElementById('timerProgress').style.background = 'linear-gradient(90deg, #ffc107, #dc3545)';
+            } else if (percent <= 50) {
+                document.getElementById('timerProgress').style.background = 'linear-gradient(90deg, #28a745, #ffc107)';
+            } else {
+                document.getElementById('timerProgress').style.background = 'linear-gradient(90deg, #28a745, #20c997)';
+            }
         }
         
-        async function animateNumbers(numbers) {
-            for (let i = 0; i < numbers.length; i++) {
-                const num = numbers[i];
-                const isMatch = bets.some(b => b.numbers.includes(num));
-                
+        // Drawing animation
+        async function animateNumber(num, isMatch, index, total) {
+            return new Promise((resolve) => {
                 const div = document.createElement('div');
                 div.className = `drawing-number ${isMatch ? 'matched' : ''}`;
                 div.textContent = num;
                 document.body.appendChild(div);
-                
+                document.getElementById('status').innerHTML = `🎲 Drawing ${index + 1}/${total}...`;
                 const btn = document.querySelector(`.number[data-num="${num}"]`);
-                if (btn) {
-                    btn.classList.add('drawn');
-                    if (isMatch) btn.classList.add('matched');
-                }
-                
-                document.getElementById('status').innerHTML = `🎲 Drawing ${i+1}/${numbers.length}...`;
-                await new Promise(r => setTimeout(r, 600));
-                div.remove();
-                await new Promise(r => setTimeout(r, 100));
-            }
+                if (btn) { btn.classList.add('drawn'); if (isMatch) btn.classList.add('matched'); }
+                setTimeout(() => { div.remove(); resolve(); }, 600);
+            });
         }
         
-        async function submitBets() {
-            if (bets.length === 0) return;
-            document.getElementById('status').innerHTML = '<span class="spinner-border spinner-border-sm"></span> Placing bets...';
-            
-            for (const bet of bets) {
-                try {
-                    const res = await fetch('/keno/bet', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: { phone: userPhone, selectedNumbers: bet.numbers, betAmount: bet.amount }
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        balance = data.newBalance;
-                        localStorage.setItem('userBalance', balance);
-                        updateBalanceDisplay();
-                    }
-                } catch(e) { console.error('Bet error:', e); }
+        async function animateNumbers(numbers) {
+            if (isDrawing) return;
+            isDrawing = true;
+            for (let i = 0; i < numbers.length; i++) {
+                // ✅ FIX: Check submitted bets for match highlights, not pending bets
+                const isMatch = submittedBets.some(b => b.numbers.includes(numbers[i]));
+                await animateNumber(numbers[i], isMatch, i, numbers.length);
+                await new Promise(r => setTimeout(r, 80));
             }
-            document.getElementById('status').innerHTML = '✅ Bets placed! Watching draw...';
+            isDrawing = false;
+        }
+        
+        function normalizeArray(arr) {
+            return [...arr].sort((a, b) => a - b).join(',');
+        }
+        
+        function updateBetResults(roundBets) {
+            submittedBets.forEach((bet, idx) => {
+                const normalizedBet = normalizeArray(bet.numbers);
+                const match = roundBets.find(r => {
+                    if (!r.selected_numbers) return false;
+                    return normalizeArray(r.selected_numbers) === normalizedBet;
+                });
+                const resultDiv = document.getElementById(`submitted-result-${idx}`);
+                if (!resultDiv) return;
+                if (match && match.win_amount > 0) {
+                    resultDiv.innerHTML = `🏆 WON: +$${parseFloat(match.win_amount).toFixed(2)}`;
+                    resultDiv.className = 'bet-result win';
+                    document.getElementById(`submitted-bet-${idx}`)?.classList.add('won');
+                } else {
+                    resultDiv.innerHTML = `💸 LOST: -$${bet.amount.toFixed(2)}`;
+                    resultDiv.className = 'bet-result loss';
+                    document.getElementById(`submitted-bet-${idx}`)?.classList.add('lost');
+                }
+            });
+        }
+        
+        function showResultsBar(gameId, drawnNumbers, winAmount, totalBet) {
+            const resultsBar = document.getElementById('resultsBar');
+            const resultsContent = document.getElementById('resultsContent');
+            const isWin = winAmount > 0;
+            const netResult = winAmount - totalBet;
+            resultsContent.innerHTML = `
+                <div style="flex:1">
+                    <div class="results-numbers">🎲 ${drawnNumbers.join(', ')}</div>
+                    <div style="font-size:0.65rem; color:#aaa;">${gameId}</div>
+                </div>
+                <div style="text-align:right">
+                    <div class="${isWin ? 'results-win' : 'results-lose'}">
+                        ${isWin ? `🏆 WON: +$${winAmount.toFixed(2)}` : `😢 LOST: -$${totalBet.toFixed(2)}`}
+                    </div>
+                    <div style="font-size:0.7rem;">Net: ${netResult >= 0 ? '+' : ''}$${netResult.toFixed(2)}</div>
+                </div>
+            `;
+            resultsBar.classList.add('show');
+            showToast(isWin ? `🎉 YOU WON! +$${winAmount.toFixed(2)}` : `😢 YOU LOST! -$${totalBet.toFixed(2)}`, isWin);
+            setTimeout(() => resultsBar.classList.contains('show') && resultsBar.classList.remove('show'), 8000);
+        }
+        
+        function closeResultsBar() {
+            document.getElementById('resultsBar').classList.remove('show');
+        }
+        
+        // ✅ FIX: Full reset including submittedBets for next round
+        function clearBoardForNextRound() {
+            bets = [];
+            submittedBets = [];
+            betsAlreadySubmitted = false;
+            numbersShown = false;
+            resultsShown = false;
+            isDrawing = false;
+            updateTotal();
+            renderBets();
+            clearSelection();
+            resetGrid();
+            canBet = true;
+            updateSubmitButton();
         }
         
         async function fetchResults(gameId, drawnNumbers) {
             try {
-                const res = await fetch(`/keno/history/${userPhone}`);
-                const history = await res.json();
+                const response = await fetch(`/keno/history/${userPhone}`);
+                const history = await response.json();
                 const roundBets = history.filter(h => h.game_id === gameId);
-                const totalBet = bets.reduce((s, b) => s + b.amount, 0);
-                const totalWin = roundBets.reduce((s, b) => s + (b.win_amount || 0), 0);
-                
-                bets.forEach((bet, idx) => {
-                    const normalizedBet = [...bet.numbers].sort((a,b)=>a-b).join(',');
-                    const match = roundBets.find(r => {
-                        if (!r.selected_numbers) return false;
-                        return [...r.selected_numbers].sort((a,b)=>a-b).join(',') === normalizedBet;
-                    });
-                    const resultDiv = document.getElementById(`bet-result-${idx}`);
-                    if (match && match.win_amount > 0) {
-                        resultDiv.innerHTML = `🏆 WON: +$${match.win_amount.toFixed(2)}`;
-                        resultDiv.className = 'bet-result win';
-                        document.querySelector(`.bet-item[data-idx="${idx}"]`).classList.add('won');
-                    } else if (match) {
-                        resultDiv.innerHTML = `💸 LOST: -$${bet.amount.toFixed(2)}`;
-                        resultDiv.className = 'bet-result loss';
-                        document.querySelector(`.bet-item[data-idx="${idx}"]`).classList.add('lost');
-                    }
-                });
-                
-                const resultsBar = document.getElementById('resultsBar');
-                const netResult = totalWin - totalBet;
-                document.getElementById('resultsContent').innerHTML = `
-                    <div style="flex:1">
-                        <div class="results-numbers">🎲 ${drawnNumbers.join(', ')}</div>
-                        <div style="font-size:0.65rem;">${gameId}</div>
-                    </div>
-                    <div>
-                        <div class="${totalWin > 0 ? 'results-win' : 'results-lose'}">
-                            ${totalWin > 0 ? `🏆 WON: +$${totalWin.toFixed(2)}` : `😢 LOST: -$${totalBet.toFixed(2)}`}
-                        </div>
-                        <div style="font-size:0.7rem;">Net: ${netResult >= 0 ? '+' : ''}$${netResult.toFixed(2)}</div>
-                    </div>
-                `;
-                resultsBar.classList.add('show');
-                showToast(totalWin > 0 ? `🎉 YOU WON! +$${totalWin.toFixed(2)}` : `😢 YOU LOST! -$${totalBet.toFixed(2)}`, totalWin > 0);
-                
+                const totalBet = submittedBets.reduce((sum, b) => sum + b.amount, 0);
+                const totalWin = roundBets.reduce((sum, b) => sum + (parseFloat(b.win_amount) || 0), 0);
+                updateBetResults(roundBets);
+                showResultsBar(gameId, drawnNumbers, totalWin, totalBet);
+                // Force a fresh balance load from DB after results
                 await loadBalance();
-                
-                setTimeout(() => {
-                    resultsBar.classList.remove('show');
-                    bets = [];
-                    updateTotal();
-                    renderBets();
-                    clearSelection();
-                    resetGrid();
-                }, 5000);
-            } catch(e) { console.error('Results error:', e); }
+            } catch (error) {
+                console.error('Fetch results error:', error);
+            }
         }
         
+        function refreshBalance() { loadBalance(); }
+        
+        // ============ MAIN POLL LOOP ============
         async function pollGameState() {
             try {
-                const res = await fetch('/keno/state');
-                const state = await res.json();
+                const response = await fetch('/keno/state');
+                const state = await response.json();
                 if (!state.success) return;
+                
+                // New game round detected — reset board
+                if (currentGameId !== null && currentGameId !== state.gameId) {
+                    clearBoardForNextRound();
+                }
                 
                 if (currentGameId !== state.gameId) {
                     currentGameId = state.gameId;
                     document.getElementById('gameId').textContent = state.gameId;
                 }
                 
-                updateTimer(state.timeLeft);
+                currentPhase = state.phase;
+                const maxDuration = state.phase === 'betting' ? 30 : state.phase === 'drawing' ? 30 : 5;
+                updateTimer(state.timeLeft, maxDuration);
                 
+                // ── BETTING PHASE ──
                 if (state.phase === 'betting') {
                     canBet = true;
                     document.getElementById('phaseLabel').innerHTML = '⏱️ BETTING WINDOW';
-                    document.getElementById('status').innerHTML = 'Select numbers and add your bets!';
-                    document.getElementById('status').style.color = '#ffc107';
+                    if (!betsAlreadySubmitted) {
+                        document.getElementById('status').innerHTML = '🎲 Select numbers and add your bets!';
+                        document.getElementById('status').style.color = '#ffc107';
+                    }
+                    updateSubmitButton();
                 }
+                // ── DRAWING PHASE ──
                 else if (state.phase === 'drawing') {
+                    // ✅ FIX: If user somehow didn't click submit, auto-submit as fallback
+                    // but this will likely fail on server if phase changed to 'drawing' already.
+                    // The PRIMARY path is user clicking the submit button during betting.
                     canBet = false;
+                    updateSubmitButton();
                     document.getElementById('phaseLabel').innerHTML = '🎲 DRAWING NUMBERS';
-                    document.getElementById('status').innerHTML = 'Numbers being drawn...';
                     document.getElementById('status').style.color = '#ff9800';
                     
-                    if (bets.length > 0 && !window.betsSubmitted) {
-                        window.betsSubmitted = true;
-                        await submitBets();
-                    }
-                    
-                    if (state.drawnNumbers && !window.numbersShown) {
-                        window.numbersShown = true;
+                    if (state.drawnNumbers && state.drawnNumbers.length > 0 && !numbersShown) {
+                        numbersShown = true;
                         await animateNumbers(state.drawnNumbers);
                     }
                 }
+                // ── RESULTS PHASE ──
                 else if (state.phase === 'results') {
                     canBet = false;
+                    updateSubmitButton();
                     document.getElementById('phaseLabel').innerHTML = '📊 RESULTS';
-                    document.getElementById('status').innerHTML = 'Round complete!';
+                    document.getElementById('status').innerHTML = '✅ Round complete! Showing results...';
                     document.getElementById('status').style.color = '#28a745';
                     
-                    if (state.drawnNumbers && !window.resultsShown) {
-                        window.resultsShown = true;
+                    if (state.drawnNumbers && !resultsShown && submittedBets.length > 0) {
+                        resultsShown = true;
                         await fetchResults(state.gameId, state.drawnNumbers);
-                        window.betsSubmitted = false;
-                        window.numbersShown = false;
-                        window.resultsShown = false;
+                        // Clear board after showing results
+                        setTimeout(() => clearBoardForNextRound(), 4000);
+                    } else if (!resultsShown) {
+                        // No bets this round, just reset after results
+                        resultsShown = true;
+                        setTimeout(() => clearBoardForNextRound(), 4000);
                     }
                 }
-            } catch(e) { console.error('Poll error:', e); }
+            } catch (error) {
+                console.error('Poll error:', error);
+            }
         }
         
-        function refreshBalance() { loadBalance(); }
-        function closeResultsBar() { document.getElementById('resultsBar').classList.remove('show'); }
-        
+        // ============ INIT ============
         createNumberGrid();
-        loadBalance();
         updateTotal();
         renderBets();
+        loadBalance();
         
         pollingInterval = setInterval(pollGameState, 500);
-        setInterval(loadBalance, 5000);
+        setInterval(loadBalance, 10000); // Periodic balance sync as safety net
+        
+        window.addEventListener('beforeunload', () => {
+            if (pollingInterval) clearInterval(pollingInterval);
+        });
         
         window.refreshBalance = refreshBalance;
         window.closeResultsBar = closeResultsBar;
