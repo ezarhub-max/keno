@@ -187,19 +187,33 @@
             margin-bottom: 6px;
         }
         
+        /* FIXED: Better visible input fields */
         .form-control, .form-select {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
             border-radius: 16px;
             padding: 14px 16px;
-            color: white;
+            color: #ffffff !important;
             font-size: 1rem;
+            font-weight: 500;
         }
         
         .form-control:focus, .form-select:focus {
-            background: rgba(0,0,0,0.4);
+            background: rgba(255,255,255,0.25);
             border-color: #ffc107;
             outline: none;
+            box-shadow: 0 0 0 3px rgba(255,193,7,0.2);
+            color: #ffffff;
+        }
+        
+        .form-control::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+        
+        /* Remove spinner arrows for number input */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button {
+            opacity: 0.5;
         }
         
         .amount-buttons {
@@ -213,13 +227,19 @@
             flex: 1;
             min-width: 70px;
             background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
             border-radius: 40px;
             padding: 10px;
-            color: white;
+            color: #ffffff;
             font-weight: 600;
             text-align: center;
             cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .amount-btn:active {
+            background: rgba(255,255,255,0.25);
+            transform: scale(0.95);
         }
         
         .btn-primary {
@@ -229,6 +249,12 @@
             padding: 14px;
             font-weight: 600;
             width: 100%;
+            color: white;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary:active {
+            transform: scale(0.97);
         }
         
         .btn-warning {
@@ -239,6 +265,11 @@
             font-weight: 600;
             color: #1a1a2e;
             width: 100%;
+            transition: all 0.2s;
+        }
+        
+        .btn-warning:active {
+            transform: scale(0.97);
         }
         
         .telebirr-info {
@@ -258,6 +289,7 @@
             border-radius: 50px;
             margin: 10px 0;
             font-family: monospace;
+            color: #ffffff;
         }
         
         .copy-btn {
@@ -267,6 +299,12 @@
             padding: 6px 15px;
             color: white;
             margin-left: 10px;
+            transition: all 0.2s;
+        }
+        
+        .copy-btn:active {
+            transform: scale(0.95);
+            background: rgba(255,255,255,0.4);
         }
         
         .request-item {
@@ -317,9 +355,25 @@
             to { transform: translate(-50%, 0); opacity: 1; }
         }
         
+        /* FIXED: Transaction ID input special styling */
+        #transactionId, #withdrawTelebirr {
+            font-family: monospace;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Alert styling */
+        .alert-info {
+            background: rgba(23,162,184,0.2);
+            border: 1px solid rgba(23,162,184,0.3);
+            color: #17a2b8;
+            border-radius: 16px;
+        }
+        
         @media (max-width: 380px) {
             .balance-amount { font-size: 2.5rem; }
             .telebirr-number { font-size: 1.2rem; }
+            .amount-btn { min-width: 60px; font-size: 0.8rem; }
+            .form-control { font-size: 0.9rem; padding: 12px; }
         }
     </style>
 </head>
@@ -388,7 +442,8 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Amount ($)</label>
-                        <input type="number" class="form-control" id="depositAmount" placeholder="Enter amount" min="10" step="10">
+                        <input type="number" class="form-control" id="depositAmount" placeholder="Enter amount (min $10)" min="10" step="10" value="">
+                        <small class="text-muted" style="font-size: 0.7rem; color: rgba(255,255,255,0.5);">Minimum deposit: $10</small>
                     </div>
                     
                     <div class="amount-buttons">
@@ -396,11 +451,13 @@
                         <div class="amount-btn" onclick="setAmount(20)">$20</div>
                         <div class="amount-btn" onclick="setAmount(50)">$50</div>
                         <div class="amount-btn" onclick="setAmount(100)">$100</div>
+                        <div class="amount-btn" onclick="setAmount(200)">$200</div>
+                        <div class="amount-btn" onclick="setAmount(500)">$500</div>
                     </div>
                     
                     <div class="mb-3 mt-3">
                         <label class="form-label">Transaction ID</label>
-                        <input type="text" class="form-control" id="transactionId" placeholder="Enter your Telebirr transaction ID">
+                        <input type="text" class="form-control" id="transactionId" placeholder="Enter your Telebirr transaction ID (e.g., TX123456789)">
                         <small class="text-muted" style="font-size: 0.65rem;">Example: TX123456789</small>
                     </div>
                     
@@ -435,13 +492,14 @@
                 <div class="card-body">
                     <div class="card-title"><i class="fas fa-money-bill-wave"></i> Request Withdrawal</div>
                     
-                    <div class="alert alert-info mb-3" style="background: rgba(23,162,184,0.2); border: 1px solid rgba(23,162,184,0.3); color: #17a2b8;">
+                    <div class="alert alert-info mb-3">
                         <i class="fas fa-info-circle"></i> Withdrawals are processed within 48 hours. Your balance will be deducted immediately.
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Amount ($)</label>
-                        <input type="number" class="form-control" id="withdrawAmount" placeholder="Enter amount" min="10" step="10">
+                        <input type="number" class="form-control" id="withdrawAmount" placeholder="Enter amount (min $10)" min="10" step="10" value="">
+                        <small class="text-muted" style="font-size: 0.7rem; color: rgba(255,255,255,0.5);">Minimum withdrawal: $10</small>
                     </div>
                     
                     <div class="amount-buttons">
@@ -454,6 +512,7 @@
                     <div class="mb-3 mt-3">
                         <label class="form-label">Telebirr Number</label>
                         <input type="tel" class="form-control" id="withdrawTelebirr" placeholder="09XX XXX XXX">
+                        <small class="text-muted" style="font-size: 0.65rem;">Enter your Telebirr registered number</small>
                     </div>
                     
                     <button class="btn-warning" onclick="requestWithdrawal()">
@@ -515,10 +574,18 @@
         
         function setAmount(amount) {
             document.getElementById('depositAmount').value = amount;
+            // Visual feedback
+            const btn = event.target;
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => btn.style.transform = '', 150);
         }
         
         function setWithdrawAmount(amount) {
             document.getElementById('withdrawAmount').value = amount;
+            // Visual feedback
+            const btn = event.target;
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => btn.style.transform = '', 150);
         }
         
         function copyTelebirrNumber() {
@@ -619,7 +686,6 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Update balance immediately
                     if (data.newBalance !== undefined) {
                         balance = data.newBalance;
                         localStorage.setItem('userBalance', balance);
