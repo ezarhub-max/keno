@@ -975,7 +975,6 @@ bot.start(async (ctx) => {
         '/balance - Check wallet balance\n' +
         '/invite - Get referral link\n' +
         '/referrals - View your referrals\n' +
-        '/keno - Play Keno\n' +
         '/help - Show this menu'
     );
 });
@@ -1066,36 +1065,7 @@ async function viewReferrals(ctx) {
     }
 }
 
-// /keno command
-bot.command('keno', async (ctx) => {
-    try {
-        const registered = await isUserRegistered(ctx.from.id);
-        if (!registered.registered) return ctx.reply('❌ Register first with /register');
-        
-        const kenoUrl = `${BASE_URL}/keno.html?phone=${encodeURIComponent(registered.phone)}&auto=1`;
-        
-        await ctx.reply(
-            `🎲 KENO GAME\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `🎯 How to Play:\n` +
-            `• Select 1-10 numbers (1-80)\n` +
-            `• Place your bets\n` +
-            `• Watch numbers get drawn\n` +
-            `• Win up to 20,000x your bet!\n\n` +
-            `💰 Current Balance: $${parseFloat(registered.user.wallet_balance).toFixed(2)}`,
-            {
-                reply_markup: {
-                    inline_keyboard: [
-                        [{ text: '🎲 Play Keno Now', web_app: { url: kenoUrl } }]
-                    ]
-                }
-            }
-        );
-    } catch (err) {
-        console.error('Keno error:', err);
-        ctx.reply('❌ Error. Please try again.');
-    }
-});
+
 
 // /register command
 bot.command('register', async (ctx) => {
@@ -1133,7 +1103,7 @@ bot.on('contact', async (ctx) => {
         const registered = await isUserRegistered(userId);
         if (registered.registered) {
             await ctx.reply('✅ Already registered!', { reply_markup: { remove_keyboard: true } });
-            const autoLoginUrl = `${BASE_URL}/login.html?phone=${encodeURIComponent(registered.phone)}&auto=1`;
+            const autoLoginUrl = `${BASE_URL}/select.html?phone=${encodeURIComponent(registered.phone)}&auto=1`;
             return ctx.reply(`Click below:`, { reply_markup: { inline_keyboard: [[{ text: '🚀 Auto-Login', web_app: { url: autoLoginUrl } }]] } });
         }
         
@@ -1141,7 +1111,7 @@ bot.on('contact', async (ctx) => {
         if (check.rows.length > 0) {
             await pool.query('INSERT INTO telegram_links (telegram_id, telegram_username, phone) VALUES ($1,$2,$3)', [userId, telegramUsername, phone]);
             await ctx.reply('✅ Phone linked!', { reply_markup: { remove_keyboard: true } });
-            const autoLoginUrl = `${BASE_URL}/login.html?phone=${encodeURIComponent(phone)}&auto=1`;
+            const autoLoginUrl = `${BASE_URL}/select.html?phone=${encodeURIComponent(phone)}&auto=1`;
             return ctx.reply(`Click below:`, { reply_markup: { inline_keyboard: [[{ text: '🚀 Auto-Login', web_app: { url: autoLoginUrl } }]] } });
         }
         
@@ -1169,7 +1139,7 @@ bot.on('contact', async (ctx) => {
 bot.command('play', async (ctx) => {
     const registered = await isUserRegistered(ctx.from.id);
     if (registered.registered) {
-        const autoLoginUrl = `${BASE_URL}/login.html?phone=${encodeURIComponent(registered.phone)}&auto=1`;
+        const autoLoginUrl = `${BASE_URL}/select.html?phone=${encodeURIComponent(registered.phone)}&auto=1`;
         return ctx.reply(`Click below:`, { reply_markup: { inline_keyboard: [[{ text: '🚀 Play', web_app: { url: autoLoginUrl } }]] } });
     }
     ctx.reply('❌ Not registered. Use /register');
