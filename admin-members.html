@@ -303,7 +303,7 @@
                     </div>
                 </div>
                 <div class="card-body" id="pendingDepositsList">
-                    <div class="empty-state">Loading...</div>
+                    <div class="empty-state">Loading pending deposits...</div>
                 </div>
             </div>
         </div>
@@ -318,12 +318,19 @@
                 </div>
                 <div class="card-body">
                     <div class="member-table">
-                        <table>
+                        <table class="table table-dark table-hover">
                             <thead>
-                                <tr><th>Phone</th><th>Balance</th><th>Deposits</th><th>Referrals</th><th>Joined</th><th>Action</th></tr>
+                                <tr>
+                                    <th>Phone</th>
+                                    <th>Balance</th>
+                                    <th>Total Deposits</th>
+                                    <th>Referrals</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
                             </thead>
                             <tbody id="membersList">
-                                <tr><td colspan="6" class="empty-state">Loading...</td>'90
+                                <tr><td colspan="6" class="empty-state">Loading members...</td>'9,
                             </tbody>
                         </table>
                     </div>
@@ -358,8 +365,9 @@
         let addBalanceModal = null;
         let autoRefreshInterval = null;
         
-        // ✅ Check admin authentication - using both flags for compatibility
+        // Check admin authentication
         if (!localStorage.getItem('adminLoggedIn') && !localStorage.getItem('adminAuth')) {
+            console.log('No admin auth found, redirecting to login');
             window.location.href = 'admin-login.html';
         }
         
@@ -379,7 +387,7 @@
         
         function updateStatNumber(elementId, newValue) {
             const element = document.getElementById(elementId);
-            element.textContent = newValue;
+            if (element) element.textContent = newValue;
         }
         
         function switchTab(tab) {
@@ -398,10 +406,19 @@
         }
         
         async function loadPendingDeposits() {
+            console.log('Loading pending deposits...');
             try {
                 const response = await fetch('/admin/deposits');
+                console.log('Deposits response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
                 const deposits = await response.json();
-                const pending = deposits.filter(d => d.status === 'pending');
+                console.log('Deposits data:', deposits);
+                
+                const pending = Array.isArray(deposits) ? deposits.filter(d => d.status === 'pending') : [];
                 
                 updateStatNumber('pendingDeposits', pending.length);
                 
@@ -414,9 +431,9 @@
                             <div class="d-flex justify-content-between align-items-center flex-wrap">
                                 <div>
                                     <div class="deposit-amount">$${parseFloat(deposit.amount).toFixed(2)}</div>
-                                    <div class="deposit-info">📱 ${deposit.phone}</div>
-                                    <div class="deposit-info">🆔 TX: ${deposit.transaction_id}</div>
-                                    <div class="deposit-info">📅 ${new Date(deposit.created_at).toLocaleString()}</div>
+                                    <div class="deposit-info">📱 ${deposit.phone || 'N/A'}</div>
+                                    <div class="deposit-info">🆔 TX: ${deposit.transaction_id || 'N/A'}</div>
+                                    <div class="deposit-info">📅 ${deposit.created_at ? new Date(deposit.created_at).toLocaleString() : 'N/A'}</div>
                                 </div>
                                 <div class="mt-2 mt-sm-0">
                                     <button class="btn-approve" onclick="approveDeposit(${deposit.id}, 'approve', '${deposit.phone}', ${deposit.amount})">
@@ -431,16 +448,16 @@
                     `).join('');
                 }
             } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('pendingDepositsList').innerHTML = '<div class="empty-state">Error loading deposits</div>';
+                console.error('Error loading deposits:', error);
+                document.getElementById('pendingDepositsList').innerHTML = '<div class="empty-state">Error loading deposits: ' + error.message + '</div>';
             }
         }
         
         async function approveDeposit(depositId, action, phone, amount) {
-            const approveBtn = event.target;
-            const originalText = approveBtn.innerHTML;
-            approveBtn.disabled = true;
-            approveBtn.innerHTML = '<span class="loading-spinner"></span>';
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner"></span>';
             
             try {
                 const response = await fetch('/admin/approve-deposit', {
@@ -451,55 +468,67 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showToast(`Deposit ${action === 'approve' ? 'approved' : 'rejected'}! ${action === 'approve' ? `+$${amount} added` : ''}`);
+                    showToast(`Deposit ${action === 'approve' ? 'approved' : 'rejected'}! ${action === 'approve' ? `+$${amount} added to ${phone}` : ''}`);
                     await loadPendingDeposits();
                     await loadMembers();
-                    updateTotalBalance();
+                    await updateTotalBalance();
                 } else {
                     showToast('Error: ' + (data.error || 'Operation failed'), 'error');
                 }
             } catch (error) {
+                console.error('Error:', error);
                 showToast('Network error. Please try again.', 'error');
             } finally {
-                approveBtn.disabled = false;
-                approveBtn.innerHTML = originalText;
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         }
         
         async function updateTotalBalance() {
             try {
                 const response = await fetch('/admin/members');
+                if (!response.ok) throw new Error('Failed to fetch members');
                 const members = await response.json();
-                const total = members.reduce((sum, m) => sum + parseFloat(m.wallet_balance), 0);
+                const total = Array.isArray(members) ? members.reduce((sum, m) => sum + parseFloat(m.wallet_balance || 0), 0) : 0;
                 updateStatNumber('totalBalance', `$${total.toFixed(2)}`);
-                updateStatNumber('totalMembers', members.length);
+                updateStatNumber('totalMembers', Array.isArray(members) ? members.length : 0);
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error updating total balance:', error);
             }
         }
         
         async function loadMembers() {
+            console.log('Loading members...');
             try {
                 const response = await fetch('/admin/members');
-                const members = await response.json();
+                console.log('Members response status:', response.status);
                 
-                updateStatNumber('totalMembers', members.length);
-                const total = members.reduce((sum, m) => sum + parseFloat(m.wallet_balance), 0);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const members = await response.json();
+                console.log('Members data:', members);
+                
+                const membersList = Array.isArray(members) ? members : [];
+                updateStatNumber('totalMembers', membersList.length);
+                
+                const total = membersList.reduce((sum, m) => sum + parseFloat(m.wallet_balance || 0), 0);
                 updateStatNumber('totalBalance', `$${total.toFixed(2)}`);
                 
                 const tbody = document.getElementById('membersList');
-                if (members.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No members found</td>'90;
+                if (membersList.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No members found</td></tr>';
                     return;
                 }
                 
-                tbody.innerHTML = members.map(member => `
-                    <tr data-phone="${member.phone}">
-                        <td>${member.phone}</td>
-                        <td class="balance-cell">$${parseFloat(member.wallet_balance).toFixed(2)}</td>
+                tbody.innerHTML = membersList.map(member => `
+                    <tr>
+                        <td>${member.phone || 'N/A'}</td>
+                        <td>$${parseFloat(member.wallet_balance || 0).toFixed(2)}</td>
                         <td>$${parseFloat(member.total_deposits || 0).toFixed(2)}</td>
                         <td>${member.total_referrals || 0}</td>
-                        <td>${new Date(member.created_at).toLocaleDateString()}</td>
+                        <td>${member.created_at ? new Date(member.created_at).toLocaleDateString() : 'N/A'}</td>
                         <td>
                             <button class="add-btn" onclick="openAddBalance('${member.phone}')">
                                 <i class="fas fa-plus"></i> Add
@@ -511,8 +540,8 @@
                     </tr>
                 `).join('');
             } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('membersList').innerHTML = '<tr><td colspan="6" class="empty-state">Error loading members</td>'90;
+                console.error('Error loading members:', error);
+                document.getElementById('membersList').innerHTML = `<tr><td colspan="6" class="empty-state">Error loading members: ${error.message}</td></tr>`;
             }
         }
         
@@ -551,11 +580,12 @@
                     showToast(`Added $${amount} to ${currentUserPhone}`);
                     if (addBalanceModal) addBalanceModal.hide();
                     await loadMembers();
-                    updateTotalBalance();
+                    await updateTotalBalance();
                 } else {
                     showToast('Error: ' + (data.error || 'Operation failed'), 'error');
                 }
             } catch (error) {
+                console.error('Error:', error);
                 showToast('Network error. Please try again.', 'error');
             } finally {
                 submitBtn.disabled = false;
@@ -564,7 +594,7 @@
         }
         
         async function deleteMember(phone) {
-            if (!confirm(`⚠️ Delete member ${phone}? This cannot be undone!`)) return;
+            if (!confirm(`⚠️ Delete member ${phone}?\n\nThis will permanently remove the user and all their data!\nThis action CANNOT be undone!`)) return;
             
             const deleteBtn = event.target;
             const originalText = deleteBtn.innerHTML;
@@ -580,13 +610,14 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showToast(`Member ${phone} deleted`);
+                    showToast(`Member ${phone} deleted successfully`);
                     await loadMembers();
-                    updateTotalBalance();
+                    await updateTotalBalance();
                 } else {
                     showToast('Error: ' + (data.error || 'Delete failed'), 'error');
                 }
             } catch (error) {
+                console.error('Error:', error);
                 showToast('Network error. Please try again.', 'error');
             } finally {
                 deleteBtn.disabled = false;
@@ -601,12 +632,16 @@
                 if (document.getElementById('depositsTab').classList.contains('active')) {
                     loadPendingDeposits();
                 }
+                if (document.getElementById('membersTab').classList.contains('active')) {
+                    loadMembers();
+                }
                 updateTotalBalance();
             }, 10000);
         }
         
         // Initial load
         loadPendingDeposits();
+        loadMembers();
         updateTotalBalance();
         startAutoRefresh();
         
