@@ -6,6 +6,7 @@
     <title>Wallet - Horse Racing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         * {
             margin: 0;
@@ -95,6 +96,15 @@
             font-weight: 800;
             color: #28a745;
             font-family: monospace;
+        }
+        
+        .balance-update {
+            animation: pulse 0.3s ease;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
         
         .last-updated {
@@ -327,14 +337,36 @@
             margin-top: 12px;
         }
         
-        .modal-content {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.2);
+        .alert-success {
+            background: rgba(40,167,69,0.2);
+            border: 1px solid rgba(40,167,69,0.3);
+            color: #28a745;
         }
         
-        .modal-title, .modal-body {
+        .alert-warning {
+            background: rgba(255,193,7,0.2);
+            border: 1px solid rgba(255,193,7,0.3);
+            color: #ffc107;
+        }
+        
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #28a745;
             color: white;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
         }
         
         @media (max-width: 380px) {
@@ -421,6 +453,7 @@
                     <div class="mb-3 mt-3">
                         <label class="form-label">Transaction ID</label>
                         <input type="text" class="form-control" id="transactionId" placeholder="Enter your Telebirr transaction ID">
+                        <small class="text-muted" style="font-size: 0.65rem;">Example: TX123456789</small>
                     </div>
                     
                     <button class="btn-primary mt-2" onclick="submitDeposit()">
@@ -474,7 +507,7 @@
                     </div>
                 </div>
                 
-                <div class="alert" id="requirementMsg">⏳ Complete ONE requirement to withdraw</div>
+                <div class="alert alert-warning" id="requirementMsg">⏳ Complete ONE requirement to withdraw</div>
             </div>
 
             <div class="card">
@@ -507,11 +540,44 @@
     </div>
 
     <script>
+        // Socket.io connection
+        const socket = io();
+        
         const userPhone = localStorage.getItem('userPhone');
         let balance = parseFloat(localStorage.getItem('userBalance')) || 0;
         let userCreatedAt = null;
         
         if (!userPhone) window.location.href = 'login.html';
+        
+        // Register user with socket for real-time updates
+        socket.emit('register-user', userPhone);
+        
+        // Listen for real-time balance updates
+        socket.on('balance-update', (data) => {
+            console.log('💰 Balance update received:', data);
+            if (data.newBalance !== undefined) {
+                balance = data.newBalance;
+                localStorage.setItem('userBalance', balance);
+                updateBalanceDisplay();
+                showToast('Balance updated! $' + balance.toFixed(2));
+            }
+        });
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        function updateBalanceDisplay() {
+            const balanceEl = document.getElementById('balance');
+            balanceEl.textContent = `$${balance.toFixed(2)}`;
+            balanceEl.classList.add('balance-update');
+            setTimeout(() => balanceEl.classList.remove('balance-update'), 300);
+            document.getElementById('lastUpdated').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+        }
         
         function setAmount(amount) {
             document.getElementById('depositAmount').value = amount;
@@ -523,7 +589,7 @@
         
         function copyTelebirrNumber() {
             navigator.clipboard.writeText('0933193025');
-            alert('Telebirr number copied: 0933193025');
+            showToast('Telebirr number copied!');
         }
         
         function switchTab(tab) {
@@ -536,6 +602,7 @@
             } else {
                 document.querySelector('.tab-btn:last-child').classList.add('active');
                 document.getElementById('withdrawTab').classList.add('active');
+                loadWithdrawalEligibility();
             }
         }
         
@@ -553,6 +620,11 @@
                 return;
             }
             
+            const submitBtn = event.target;
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            
             try {
                 const response = await fetch('/deposit/request', {
                     method: 'POST',
@@ -563,7 +635,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert(`✅ Deposit request submitted!\nAmount: $${amount}\nTransaction ID: ${transactionId}\n\nAdmin will approve within 24 hours.`);
+                    showToast(`✅ Deposit request submitted! $${amount}`);
                     document.getElementById('depositAmount').value = '';
                     document.getElementById('transactionId').value = '';
                     loadPendingRequests();
@@ -573,6 +645,9 @@
                 }
             } catch (error) {
                 alert('❌ Network error. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             }
         }
         
@@ -595,6 +670,11 @@
                 return;
             }
             
+            const submitBtn = event.target;
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
             try {
                 const response = await fetch('/withdraw', {
                     method: 'POST',
@@ -605,15 +685,23 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert(`✅ Withdrawal request submitted!\nAmount: $${amount}\n\nProcessing within 48 hours.`);
+                    // Update balance immediately
+                    if (data.newBalance !== undefined) {
+                        balance = data.newBalance;
+                        localStorage.setItem('userBalance', balance);
+                        updateBalanceDisplay();
+                    }
+                    showToast(`✅ Withdrawal request submitted! $${amount}`);
                     document.getElementById('withdrawAmount').value = '';
                     document.getElementById('withdrawTelebirr').value = '';
-                    await loadBalance();
                 } else {
                     alert('❌ Error: ' + (data.error || 'Withdrawal failed'));
                 }
             } catch (error) {
                 alert('❌ Network error. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             }
         }
         
@@ -621,13 +709,14 @@
             try {
                 const response = await fetch(`/wallet/${userPhone}`);
                 const data = await response.json();
-                if (data.balance !== undefined) {
+                if (data.balance !== undefined && data.balance !== balance) {
                     balance = data.balance;
                     localStorage.setItem('userBalance', balance);
-                    document.getElementById('balance').textContent = `$${balance.toFixed(2)}`;
-                    document.getElementById('lastUpdated').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+                    updateBalanceDisplay();
                 }
-            } catch (error) {}
+            } catch (error) {
+                console.error('Balance error:', error);
+            }
         }
         
         async function loadReferralInfo() {
@@ -639,7 +728,9 @@
                     document.getElementById('referralBonus').textContent = `$${(data.total_bonus || 0).toFixed(2)}`;
                     updateReferralRequirement(data.total_referrals || 0);
                 }
-            } catch (error) {}
+            } catch (error) {
+                console.error('Referral error:', error);
+            }
         }
         
         async function loadUserInfo() {
@@ -650,7 +741,9 @@
                     userCreatedAt = new Date(data.created_at);
                     updateTimeRequirement();
                 }
-            } catch (error) {}
+            } catch (error) {
+                console.error('User info error:', error);
+            }
         }
         
         async function loadDepositHistory() {
@@ -673,7 +766,9 @@
                         <div style="font-size:0.7rem;">TX: ${d.transaction_id} | ${new Date(d.created_at).toLocaleDateString()}</div>
                     </div>
                 `).join('');
-            } catch (error) {}
+            } catch (error) {
+                console.error('Deposit history error:', error);
+            }
         }
         
         async function loadPendingRequests() {
@@ -696,7 +791,9 @@
                         <div style="font-size:0.7rem;">TX: ${req.transaction_id} | ${new Date(req.created_at).toLocaleString()}</div>
                     </div>
                 `).join('');
-            } catch (error) {}
+            } catch (error) {
+                console.error('Pending requests error:', error);
+            }
         }
         
         function updateReferralRequirement(count) {
@@ -757,17 +854,37 @@
             }
         }
         
-        async function refreshAll() {
-            await Promise.all([loadBalance(), loadReferralInfo(), loadUserInfo(), loadDepositHistory(), loadPendingRequests()]);
+        function loadWithdrawalEligibility() {
+            loadReferralInfo();
+            loadUserInfo();
         }
         
-        // Initialize
+        async function refreshAll() {
+            await Promise.all([
+                loadBalance(),
+                loadReferralInfo(),
+                loadUserInfo(),
+                loadDepositHistory(),
+                loadPendingRequests()
+            ]);
+        }
+        
+        // Initialize all
+        updateBalanceDisplay();
         loadBalance();
         loadReferralInfo();
         loadUserInfo();
         loadDepositHistory();
         loadPendingRequests();
-        setInterval(() => { loadBalance(); loadPendingRequests(); updateTimeRequirement(); }, 10000);
+        
+        // Auto-refresh every 10 seconds
+        setInterval(() => {
+            loadBalance();
+            loadPendingRequests();
+            if (document.getElementById('withdrawTab').classList.contains('active')) {
+                loadWithdrawalEligibility();
+            }
+        }, 10000);
     </script>
 </body>
 </html>

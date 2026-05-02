@@ -5,17 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover, shrink-to-fit=no">
     <meta name="theme-color" content="#0f0c29">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>KENO - Number Game</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body {
             background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
@@ -26,11 +21,7 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        .container {
-            max-width: 100%;
-            margin: 0 auto;
-            padding: 0;
-        }
+        .container { max-width: 100%; margin: 0 auto; padding: 0; }
         
         /* Animations */
         @keyframes numberPop {
@@ -55,8 +46,13 @@
             from { transform: translateX(-20px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+        @keyframes balancePulse {
+            0% { transform: scale(1); color: #28a745; }
+            50% { transform: scale(1.1); color: #ffc107; }
+            100% { transform: scale(1); color: #28a745; }
+        }
         
-        /* Header - Mobile Friendly */
+        /* Header */
         .header {
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
@@ -69,16 +65,10 @@
             flex-wrap: nowrap;
             gap: 8px;
         }
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-shrink: 0;
-        }
+        .logo { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
         .logo i { font-size: 1.3rem; color: #ffc107; }
         .logo span { color: white; font-weight: bold; font-size: 1rem; }
         
-        /* Wallet Button */
         .wallet-btn {
             background: rgba(255,255,255,0.15);
             border: 1px solid rgba(255,255,255,0.2);
@@ -93,7 +83,7 @@
             transition: all 0.2s ease;
             flex-shrink: 0;
         }
-        .wallet-btn:active { transform: scale(0.97); background: rgba(255,255,255,0.25); }
+        .wallet-btn:active { transform: scale(0.97); }
         .wallet-btn i { font-size: 0.9rem; color: #ffc107; }
         
         .balance {
@@ -107,8 +97,9 @@
             flex-shrink: 0;
         }
         .balance:active { transform: scale(0.97); }
-        .balance-amount { font-size: 1rem; font-weight: 800; }
+        .balance-amount { font-size: 1rem; font-weight: 800; transition: all 0.2s ease; }
         .balance small { font-size: 0.65rem; display: block; line-height: 1.2; }
+        .balance-update { animation: balancePulse 0.3s ease; }
         .refresh-btn {
             background: rgba(255,255,255,0.2);
             border: none;
@@ -141,7 +132,7 @@
         .game-id-label, .player-label { font-size: 0.6rem; color: rgba(255,255,255,0.5); }
         .game-id-value, .player-value { font-size: 0.85rem; font-weight: bold; color: #ffc107; font-family: monospace; }
         
-        /* Timer - Mobile */
+        /* Timer */
         .timer-card {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
             border-radius: 25px;
@@ -149,39 +140,14 @@
             margin-bottom: 10px;
             text-align: center;
         }
-        .timer-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #ffc107;
-            font-family: monospace;
-            line-height: 1;
-        }
-        .timer-bar {
-            height: 4px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 2px;
-            margin-top: 6px;
-            overflow: hidden;
-        }
-        .timer-progress {
-            height: 100%;
-            width: 100%;
-            transition: width 0.1s linear;
-        }
+        .timer-value { font-size: 2rem; font-weight: bold; color: #ffc107; font-family: monospace; line-height: 1; }
+        .timer-bar { height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+        .timer-progress { height: 100%; width: 100%; transition: width 0.1s linear; }
         .phase-label { font-size: 0.7rem; color: rgba(255,255,255,0.6); margin-top: 4px; }
-        .status {
-            font-size: 0.75rem;
-            margin-top: 6px;
-            color: rgba(255,255,255,0.8);
-        }
+        .status { font-size: 0.75rem; margin-top: 6px; color: rgba(255,255,255,0.8); }
         
-        /* Stats - Mobile Grid */
-        .stats {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
+        /* Stats */
+        .stats { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
         .stat-card {
             background: rgba(255,255,255,0.12);
             backdrop-filter: blur(10px);
@@ -194,7 +160,7 @@
         .stat-value { font-size: 1.2rem; font-weight: bold; color: #ffc107; }
         .stat-label { font-size: 0.6rem; opacity: 0.8; }
         
-        /* Numbers Grid - Mobile Optimized */
+        /* Numbers Grid */
         .numbers-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -219,21 +185,13 @@
             transition: all 0.1s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             touch-action: manipulation;
-            min-width: 35px;
         }
         .number:active { transform: scale(0.94); background: #2a2a4e; }
-        .number.selected {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            transform: scale(0.98);
-            box-shadow: 0 0 8px rgba(40,167,69,0.4);
-        }
+        .number.selected { background: linear-gradient(135deg, #28a745, #20c997); transform: scale(0.98); box-shadow: 0 0 8px rgba(40,167,69,0.4); }
         .number.drawn { background: linear-gradient(135deg, #ffc107, #ff9800); }
-        .number.matched {
-            background: linear-gradient(135deg, #dc3545, #c82333);
-            animation: matchFlash 0.2s ease;
-        }
+        .number.matched { background: linear-gradient(135deg, #dc3545, #c82333); animation: matchFlash 0.2s ease; }
         
-        /* Bet Controls - Mobile */
+        /* Bet Controls */
         .bet-controls {
             background: rgba(255,255,255,0.08);
             border-radius: 16px;
@@ -248,17 +206,7 @@
             border-radius: 40px;
             padding: 3px;
         }
-        .bet-btn {
-            width: 42px;
-            height: 42px;
-            border: none;
-            border-radius: 50%;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.1s ease;
-            touch-action: manipulation;
-        }
+        .bet-btn { width: 42px; height: 42px; border: none; border-radius: 50%; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: all 0.1s ease; touch-action: manipulation; }
         .bet-btn.minus { background: #dc3545; color: white; }
         .bet-btn.plus { background: #28a745; color: white; }
         .bet-btn:active { transform: scale(0.94); }
@@ -283,17 +231,10 @@
             font-size: 0.85rem;
         }
         .add-bet-btn:active, .clear-btn:active { transform: scale(0.97); }
-        .add-bet-btn {
-            background: linear-gradient(135deg, #ffc107, #ff9800);
-            border: none;
-        }
-        .clear-btn {
-            background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-        }
+        .add-bet-btn { background: linear-gradient(135deg, #ffc107, #ff9800); border: none; }
+        .clear-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: white; }
         
-        /* Bets List - Mobile */
+        /* Bets List */
         .bets-list {
             background: rgba(255,255,255,0.08);
             border-radius: 14px;
@@ -312,39 +253,14 @@
             animation: slideIn 0.2s ease;
             font-size: 0.8rem;
         }
-        .bet-item.highlight {
-            background: rgba(40,167,69,0.5);
-            border-left: 3px solid #28a745;
-        }
-        .bet-numbers {
-            font-family: monospace;
-            color: #ffc107;
-            font-weight: bold;
-            font-size: 0.75rem;
-        }
-        .remove-bet {
-            background: none;
-            border: none;
-            color: #dc3545;
-            cursor: pointer;
-            float: right;
-            font-size: 1rem;
-            padding: 0 8px;
-            touch-action: manipulation;
-        }
+        .bet-item.highlight { background: rgba(40,167,69,0.5); border-left: 3px solid #28a745; }
+        .bet-numbers { font-family: monospace; color: #ffc107; font-weight: bold; font-size: 0.75rem; }
+        .remove-bet { background: none; border: none; color: #dc3545; cursor: pointer; float: right; font-size: 1rem; padding: 0 8px; touch-action: manipulation; }
         .remove-bet:active { transform: scale(1.1); }
         .bet-amount { color: #28a745; font-weight: bold; font-size: 0.7rem; }
+        .total { text-align: right; padding: 8px; border-top: 1px solid rgba(255,255,255,0.1); font-weight: bold; color: white; font-size: 0.9rem; }
         
-        .total {
-            text-align: right;
-            padding: 8px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            font-weight: bold;
-            color: white;
-            font-size: 0.9rem;
-        }
-        
-        /* Results Bar - Mobile Bottom */
+        /* Results Bar */
         .results-bar {
             position: fixed;
             bottom: 0;
@@ -359,37 +275,13 @@
             box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
         }
         .results-bar.show { transform: translateY(0); }
-        .results-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            font-size: 0.7rem;
-        }
-        .results-numbers {
-            font-family: monospace;
-            font-size: 0.7rem;
-            color: #ffc107;
-            word-break: break-all;
-            max-width: 60%;
-        }
+        .results-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.7rem; }
+        .results-numbers { font-family: monospace; font-size: 0.7rem; color: #ffc107; word-break: break-all; max-width: 60%; }
         .results-win { color: #28a745; font-weight: bold; }
         .results-lose { color: #dc3545; font-weight: bold; }
-        .close-results {
-            position: absolute;
-            top: 2px;
-            right: 8px;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1rem;
-            cursor: pointer;
-            padding: 5px;
-            touch-action: manipulation;
-        }
+        .close-results { position: absolute; top: 2px; right: 8px; background: none; border: none; color: white; font-size: 1rem; cursor: pointer; padding: 5px; touch-action: manipulation; }
         
-        /* Drawing Number - Mobile */
+        /* Drawing Number */
         .drawing-number {
             position: fixed;
             top: 50%;
@@ -412,65 +304,51 @@
             font-family: monospace;
             backdrop-filter: blur(10px);
         }
-        .drawing-number.matched {
-            color: #ff6b6b;
-            border-color: rgba(220,53,69,0.5);
-            box-shadow: 0 0 30px rgba(220,53,69,0.5);
-        }
+        .drawing-number.matched { color: #ff6b6b; border-color: rgba(220,53,69,0.5); box-shadow: 0 0 30px rgba(220,53,69,0.5); }
         .drawing-number.fade-out { animation: numberFadeOut 0.15s ease forwards; }
         
-        .loading-spinner {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: #ffc107;
-            animation: spin 0.8s linear infinite;
-            margin-right: 6px;
-        }
+        .loading-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #ffc107; animation: spin 0.8s linear infinite; margin-right: 6px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Scrollbar */
-        .numbers-grid::-webkit-scrollbar, .bets-list::-webkit-scrollbar {
-            width: 3px;
+        .toast-notification {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+            white-space: nowrap;
         }
-        .numbers-grid::-webkit-scrollbar-track, .bets-list::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.1);
-            border-radius: 3px;
-        }
-        .numbers-grid::-webkit-scrollbar-thumb, .bets-list::-webkit-scrollbar-thumb {
-            background: rgba(255,193,7,0.4);
-            border-radius: 3px;
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
         }
         
-        /* Tablet and Desktop */
         @media (min-width: 600px) {
             body { padding: 12px; padding-bottom: 80px; }
             .numbers-grid { grid-template-columns: repeat(8, 1fr); gap: 6px; }
             .number { font-size: 0.8rem; }
-            .timer-value { font-size: 2.2rem; }
         }
-        
         @media (min-width: 768px) {
             body { padding: 15px; padding-bottom: 90px; }
             .numbers-grid { grid-template-columns: repeat(10, 1fr); gap: 8px; padding: 15px; }
             .number { font-size: 0.85rem; border-radius: 12px; }
-            .timer-value { font-size: 2.5rem; }
             .drawing-number { width: 100px; height: 100px; font-size: 2.5rem; }
         }
-        
         @media (max-width: 380px) {
             .numbers-grid { grid-template-columns: repeat(6, 1fr); gap: 4px; padding: 8px; }
             .number { font-size: 0.65rem; }
-            .stat-value { font-size: 1rem; }
         }
         
-        /* Touch optimizations */
-        button, .number, .bet-btn, .add-bet-btn, .clear-btn, .remove-bet, .wallet-btn {
-            cursor: pointer;
-            touch-action: manipulation;
-        }
+        button, .number, .bet-btn, .add-bet-btn, .clear-btn, .remove-bet, .wallet-btn { cursor: pointer; touch-action: manipulation; }
+        .numbers-grid::-webkit-scrollbar, .bets-list::-webkit-scrollbar { width: 3px; }
+        .numbers-grid::-webkit-scrollbar-track, .bets-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        .numbers-grid::-webkit-scrollbar-thumb, .bets-list::-webkit-scrollbar-thumb { background: rgba(255,193,7,0.4); border-radius: 3px; }
     </style>
 </head>
 <body>
@@ -514,18 +392,9 @@
         
         <!-- Stats -->
         <div class="stats">
-            <div class="stat-card">
-                <div class="stat-value" id="selectedCount">0</div>
-                <div class="stat-label">Selected / 10</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="betCount">0</div>
-                <div class="stat-label">Bets</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="totalWagered">$0</div>
-                <div class="stat-label">Wagered</div>
-            </div>
+            <div class="stat-card"><div class="stat-value" id="selectedCount">0</div><div class="stat-label">Selected / 10</div></div>
+            <div class="stat-card"><div class="stat-value" id="betCount">0</div><div class="stat-label">Bets</div></div>
+            <div class="stat-card"><div class="stat-value" id="totalWagered">$0</div><div class="stat-label">Wagered</div></div>
         </div>
         
         <!-- Numbers Grid -->
@@ -541,19 +410,13 @@
                         <button class="bet-btn plus" id="plusBtn">+</button>
                     </div>
                 </div>
-                <div class="col-4">
-                    <button class="add-bet-btn" id="addBetBtn"><i class="fas fa-plus"></i> ADD</button>
-                </div>
-                <div class="col-3">
-                    <button class="clear-btn" id="clearBtn"><i class="fas fa-trash"></i></button>
-                </div>
+                <div class="col-4"><button class="add-bet-btn" id="addBetBtn"><i class="fas fa-plus"></i> ADD</button></div>
+                <div class="col-3"><button class="clear-btn" id="clearBtn"><i class="fas fa-trash"></i></button></div>
             </div>
         </div>
         
         <!-- Bets List -->
-        <div class="bets-list" id="betsList">
-            <div class="text-center text-muted" style="font-size:0.7rem;">No bets yet. Select numbers!</div>
-        </div>
+        <div class="bets-list" id="betsList"><div class="text-center text-muted" style="font-size:0.7rem;">No bets yet. Select numbers!</div></div>
         <div class="total" id="totalDisplay">Total: $0</div>
     </div>
     
@@ -564,6 +427,9 @@
     </div>
 
     <script>
+        // ============ SOCKET.IO CONNECTION ============
+        const socket = io();
+        
         // ============ USER DATA ============
         const urlParams = new URLSearchParams(window.location.search);
         let userPhone = urlParams.get('phone') || localStorage.getItem('userPhone');
@@ -573,6 +439,35 @@
             window.location.href = 'login.html';
         }
         localStorage.setItem('userPhone', userPhone);
+        
+        // Register user with socket for real-time balance updates
+        socket.emit('register-user', userPhone);
+        
+        // Listen for real-time balance updates from server
+        socket.on('balance-update', (data) => {
+            console.log('💰 Balance update received:', data);
+            if (data.newBalance !== undefined) {
+                balance = data.newBalance;
+                localStorage.setItem('userBalance', balance);
+                updateBalanceDisplay();
+                showToast('Balance updated! $' + balance.toFixed(2));
+            }
+        });
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        function updateBalanceDisplay() {
+            const balanceEl = document.getElementById('balance');
+            balanceEl.classList.add('balance-update');
+            balanceEl.textContent = `$${balance.toFixed(2)}`;
+            setTimeout(() => balanceEl.classList.remove('balance-update'), 300);
+        }
         
         // ============ GAME STATE ============
         let selectedNumbers = [];
@@ -598,16 +493,6 @@
         const totalDisplayEl = document.getElementById('totalDisplay');
         
         // ============ HELPER FUNCTIONS ============
-        function updateBalance() {
-            const balanceAmount = balanceEl.querySelector('.balance-amount');
-            if (balanceAmount) {
-                balanceAmount.textContent = `$${balance.toFixed(2)}`;
-            }
-            balanceEl.classList.add('balance-update');
-            setTimeout(() => balanceEl.classList.remove('balance-update'), 300);
-        }
-        updateBalance();
-        
         function updateTotal() {
             const total = bets.reduce((s, b) => s + b.amount, 0);
             totalWageredEl.textContent = `$${total.toFixed(2)}`;
@@ -783,7 +668,7 @@
         }
         
         // ============ RESULTS BAR ============
-        function showResultsBar(gameId, drawnNumbers, winAmount, totalBet, matches) {
+        function showResultsBar(gameId, drawnNumbers, winAmount, totalBet) {
             const resultsBar = document.getElementById('resultsBar');
             const resultsContent = document.getElementById('resultsContent');
             const isWin = winAmount > 0;
@@ -803,6 +688,9 @@
                 </div>
             `;
             resultsBar.classList.add('show');
+            
+            // Update balance display after win/loss
+            updateBalanceDisplay();
             
             setTimeout(() => {
                 if (resultsBar.classList.contains('show')) {
@@ -849,11 +737,14 @@
                     if (data.success) {
                         balance = data.newBalance;
                         localStorage.setItem('userBalance', balance);
-                        updateBalance();
+                        updateBalanceDisplay();
                     } else {
                         allSuccess = false;
                     }
-                } catch(e) { allSuccess = false; }
+                } catch(e) { 
+                    console.error('Bet error:', e);
+                    allSuccess = false; 
+                }
             }
             statusEl.innerHTML = allSuccess ? '✅ Bets placed!' : '⚠️ Some bets failed';
             return allSuccess;
@@ -868,14 +759,14 @@
                 const totalBet = bets.reduce((s, b) => s + b.amount, 0);
                 const winAmount = latest?.win_amount || 0;
                 
-                showResultsBar(gameId, drawnNumbers, winAmount, totalBet, 0);
+                showResultsBar(gameId, drawnNumbers, winAmount, totalBet);
                 
                 const balanceRes = await fetch(`/wallet/${userPhone}`);
                 const balanceData = await balanceRes.json();
                 if (balanceData.balance !== undefined && balanceData.balance !== balance) {
                     balance = balanceData.balance;
                     localStorage.setItem('userBalance', balance);
-                    updateBalance();
+                    updateBalanceDisplay();
                 }
             } catch(e) { console.error('Fetch results error:', e); }
         }
@@ -942,7 +833,8 @@
                 if (data.balance !== undefined && data.balance !== balance) {
                     balance = data.balance;
                     localStorage.setItem('userBalance', balance);
-                    updateBalance();
+                    updateBalanceDisplay();
+                    showToast('Balance refreshed: $' + balance.toFixed(2));
                 }
             } catch(e) {}
         }
