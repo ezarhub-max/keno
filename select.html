@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <script src="/socket.io/socket.io.js"></script>
 <style>
+/* Your existing styles - keep them exactly as they are */
 :root {
   --bg:        #080a0f;
   --surface:   #0d1117;
@@ -649,7 +650,14 @@ body::before {
 </div>
 
 <script>
-const socket = io();
+const socket = io({
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000
+});
+
 const urlParams = new URLSearchParams(window.location.search);
 let userPhone = urlParams.get('phone') || localStorage.getItem('userPhone');
 if (!userPhone) { window.location.href = 'login.html'; }
@@ -668,11 +676,24 @@ let numbersAnimated = false;
 let resultsShown = false;
 let isAnimating = false;
 let pollTimer = null;
+let isPolling = false;
 
-// SOCKET
+// SOCKET - with reconnect handling
 socket.emit('register-user', userPhone);
+
+socket.on('connect', () => {
+  console.log('🟢 Socket connected');
+  socket.emit('register-user', userPhone);
+  setStatus('Connected');
+});
+
+socket.on('disconnect', () => {
+  console.log('🔴 Socket disconnected');
+  setStatus('Reconnecting...');
+});
+
 socket.on('balance-update', ({ newBalance }) => {
-  if (newBalance !== undefined) {
+  if (newBalance !== undefined && newBalance !== balance) {
     balance = newBalance;
     localStorage.setItem('userBalance', balance);
     renderBalance(true);
@@ -681,12 +702,15 @@ socket.on('balance-update', ({ newBalance }) => {
 
 function renderBalance(animate = false) {
   const el = document.getElementById('balanceDisplay');
-  el.textContent = '$' + Number(balance).toFixed(2);
-  if (animate) {
-    el.classList.remove('pop');
-    void el.offsetWidth;
-    el.classList.add('pop');
-    setTimeout(() => el.classList.remove('pop'), 500);
+  const newValue = '$' + Number(balance).toFixed(2);
+  if (el.textContent !== newValue) {
+    el.textContent = newValue;
+    if (animate) {
+      el.classList.remove('pop');
+      void el.offsetWidth;
+      el.classList.add('pop');
+      setTimeout(() => el.classList.remove('pop'), 500);
+    }
   }
 }
 
@@ -694,13 +718,13 @@ async function loadBalance() {
   try {
     const r = await fetch('/wallet/' + userPhone);
     const d = await r.json();
-    if (d.balance !== undefined) {
+    if (d.balance !== undefined && d.balance !== balance) {
       balance = d.balance;
       localStorage.setItem('userBalance', balance);
       renderBalance();
     }
   } catch(e) {
-    setTimeout(loadBalance, 3000);
+    console.error('Balance load error:', e);
   }
 }
 
@@ -708,6 +732,7 @@ function refreshBalance() { loadBalance(); }
 
 function buildGrid() {
   const grid = document.getElementById('numberGrid');
+  if (grid.children.length > 0) return;
   grid.innerHTML = '';
   for (let i = 1; i <= 80; i++) {
     const b = document.createElement('button');
@@ -771,7 +796,6 @@ document.getElementById('plusBtn').onclick = () => {
   el.value = (parseFloat(el.value)||0) + 1;
 };
 
-// ADD BET BUTTON - Allows multiple bets
 document.getElementById('addBetBtn').onclick = () => {
   if (!canBet) { toast('Betting is closed!', 'info'); return; }
   if (alreadySubmitted) { toast('Already submitted this round', 'info'); return; }
@@ -789,7 +813,7 @@ document.getElementById('addBetBtn').onclick = () => {
   renderSlip();
   updateStats();
   updateSubmitBtn();
-  toast(`Added bet: ${selectedNums.length} numbers for $${amt}`, 'info');
+  toast(`Added bet: ${selectedNums.length} number(s) for $${amt}`, 'info');
 };
 
 document.getElementById('clearBetsBtn').onclick = () => {
@@ -800,7 +824,6 @@ document.getElementById('clearBetsBtn').onclick = () => {
   updateSubmitBtn();
 };
 
-// SUBMIT ALL BETS AT ONCE
 async function submitAllBets() {
   if (!canBet) { toast('Betting is closed!', 'info'); return; }
   if (alreadySubmitted) { toast('Bets already placed this round', 'info'); return; }
@@ -813,7 +836,6 @@ async function submitAllBets() {
 
   const toSend = [...pendingBets];
   let placed = 0;
-  let failed = 0;
 
   for (const bet of toSend) {
     try {
@@ -833,13 +855,9 @@ async function submitAllBets() {
         localStorage.setItem('userBalance', balance);
         renderBalance(true);
         placed++;
-      } else {
-        failed++;
-        toast('Bet rejected: ' + data.error, 'loss');
       }
     } catch(e) {
-      failed++;
-      toast('Network error', 'loss');
+      console.error('Bet error:', e);
     }
   }
 
@@ -890,7 +908,6 @@ function renderSlip() {
 
   let html = '';
   
-  // Pending bets (not yet submitted)
   if (pendingBets.length > 0) {
     html += `<div style="font-size:0.6rem; color:var(--muted); padding:4px 0;">PENDING (${pendingBets.length})</div>`;
     pendingBets.forEach((bet,i) => {
@@ -902,7 +919,6 @@ function renderSlip() {
     });
   }
   
-  // Submitted bets (already sent to server)
   if (submittedBets.length > 0) {
     html += `<div style="font-size:0.6rem; color:var(--muted); padding:4px 0; margin-top:8px;">SUBMITTED (${submittedBets.length})</div>`;
     submittedBets.forEach((bet,i) => {
@@ -939,7 +955,7 @@ const PHASE_MAX = { betting:30, drawing:30, results:5 };
 function setPhaseUI(phase, timeLeft) {
   const col = PHASE_COLORS[phase] || 'var(--cyan)';
   const max = PHASE_MAX[phase] || 30;
-  const pct = Math.max(0, (timeLeft/max)*100);
+  const pct = Math.max(0, Math.min(100, (timeLeft/max)*100));
   const fill = document.getElementById('timerFill');
   const badge = document.getElementById('phaseBadge');
   const digits = document.getElementById('timerDigits');
@@ -953,7 +969,10 @@ function setPhaseUI(phase, timeLeft) {
 }
 
 function setStatus(msg) {
-  document.getElementById('timerStatus').textContent = msg;
+  const statusEl = document.getElementById('timerStatus');
+  if (statusEl.textContent !== msg) {
+    statusEl.textContent = msg;
+  }
 }
 
 async function animateDraw(numbers) {
@@ -975,7 +994,7 @@ async function animateDraw(numbers) {
     ball.textContent = n;
     overlay.innerHTML = '';
     overlay.appendChild(ball);
-    await delay(hit ? 720 : 520);
+    await new Promise(r => setTimeout(r, hit ? 720 : 520));
   }
   overlay.innerHTML = '';
   isAnimating = false;
@@ -988,8 +1007,6 @@ async function showResults(gameId, drawnNumbers) {
     const hist = await r.json();
     const round = hist.filter(h => h.game_id === gameId);
     let totalWin = 0;
-    const totalBet = submittedBets.reduce((s,b)=>s+b.amount, 0);
-    const mySet = new Set(submittedBets.flatMap(b=>b.numbers));
 
     submittedBets.forEach((bet,i) => {
       const norm = sortStr(bet.numbers);
@@ -1010,12 +1027,12 @@ async function showResults(gameId, drawnNumbers) {
       }
     });
 
+    const totalBet = submittedBets.reduce((s,b)=>s+b.amount, 0);
     document.getElementById('panelGid').textContent = gameId;
-    document.getElementById('panelPills').innerHTML = drawnNumbers.map(n => `<span class="dpill ${mySet.has(n)?'hit':''}">${n}</span>`).join('');
+    document.getElementById('panelPills').innerHTML = drawnNumbers.map(n => `<span class="dpill">${n}</span>`).join('');
     const verdict = document.getElementById('panelVerdict');
-    const net = totalWin - totalBet;
     if (totalWin > 0) {
-      verdict.textContent = `🏆 WON $${totalWin.toFixed(2)}  ·  net +$${net.toFixed(2)}`;
+      verdict.textContent = `🏆 WON $${totalWin.toFixed(2)}`;
       verdict.className = 'panel-verdict win';
       toast(`🎉 YOU WON $${totalWin.toFixed(2)}!`, 'win');
     } else {
@@ -1024,7 +1041,7 @@ async function showResults(gameId, drawnNumbers) {
       toast(`Lost $${totalBet.toFixed(2)} this round`, 'loss');
     }
     document.getElementById('resultsPanel').classList.add('open');
-    setTimeout(closePanel, 10000);
+    setTimeout(closePanel, 8000);
     await loadBalance();
   } catch(e) { console.error('showResults:', e); }
 }
@@ -1048,11 +1065,17 @@ function resetRound() {
   setStatus('Select numbers and place bets!');
 }
 
+let lastPhase = null;
+let lastTimeLeft = null;
+
 async function poll() {
+  if (isPolling) return;
+  isPolling = true;
+  
   try {
     const r = await fetch('/keno/state');
     const state = await r.json();
-    if (!state.success) return;
+    if (!state.success) { isPolling = false; return; }
 
     if (currentGameId !== state.gameId) {
       if (currentGameId) resetRound();
@@ -1060,7 +1083,12 @@ async function poll() {
       document.getElementById('gameIdDisplay').textContent = state.gameId;
     }
 
-    setPhaseUI(state.phase, state.timeLeft);
+    // Only update UI if values changed (prevents flicker)
+    if (lastPhase !== state.phase || lastTimeLeft !== state.timeLeft) {
+      setPhaseUI(state.phase, state.timeLeft);
+      lastPhase = state.phase;
+      lastTimeLeft = state.timeLeft;
+    }
 
     if (state.phase === 'betting') {
       if (!alreadySubmitted) { canBet = true; setStatus('Select numbers and click SUBMIT ALL BETS'); }
@@ -1080,13 +1108,16 @@ async function poll() {
         resultsShown = true;
         await showResults(state.gameId, state.drawnNumbers);
         setStatus('Round over — next round starting soon…');
-        setTimeout(resetRound, 5500);
+        setTimeout(resetRound, 5000);
       }
     }
-  } catch(e) { /* silent */ }
+  } catch(e) {
+    console.error('Poll error:', e);
+  } finally {
+    isPolling = false;
+  }
 }
 
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 function sortStr(arr) { return [...arr].map(Number).sort((a,b)=>a-b).join(','); }
 function toast(msg, type='info') {
   const t = document.createElement('div');
@@ -1103,9 +1134,14 @@ loadBalance();
 renderSlip();
 updateStats();
 updateSubmitBtn();
-pollTimer = setInterval(poll, 500);
+
+pollTimer = setInterval(poll, 1000);
 setInterval(loadBalance, 10000);
-window.addEventListener('beforeunload', () => clearInterval(pollTimer));
+
+window.addEventListener('beforeunload', () => {
+  if (pollTimer) clearInterval(pollTimer);
+});
+
 window.refreshBalance = refreshBalance;
 window.closePanel = closePanel;
 window.quickPick = quickPick;
