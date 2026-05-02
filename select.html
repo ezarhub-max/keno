@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover, shrink-to-fit=no">
     <meta name="theme-color" content="#0f0c29">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>KENO - Number Game</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -23,7 +22,6 @@
         
         .container { max-width: 100%; margin: 0 auto; padding: 0; }
         
-        /* Animations */
         @keyframes numberPop {
             0% { transform: translate(-50%, -50%) scale(0) rotate(-180deg); opacity: 0; }
             40% { transform: translate(-50%, -50%) scale(1.2) rotate(0deg); }
@@ -52,7 +50,6 @@
             100% { transform: scale(1); color: #28a745; }
         }
         
-        /* Header */
         .header {
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
@@ -80,7 +77,6 @@
             align-items: center;
             gap: 6px;
             font-size: 0.8rem;
-            transition: all 0.2s ease;
             flex-shrink: 0;
         }
         .wallet-btn:active { transform: scale(0.97); }
@@ -93,10 +89,8 @@
             color: white;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s ease;
             flex-shrink: 0;
         }
-        .balance:active { transform: scale(0.97); }
         .balance-amount { font-size: 1rem; font-weight: 800; transition: all 0.2s ease; }
         .balance small { font-size: 0.65rem; display: block; line-height: 1.2; }
         .balance-update { animation: balancePulse 0.3s ease; }
@@ -110,7 +104,6 @@
             flex-shrink: 0;
         }
         
-        /* Game Info */
         .game-info {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
             border-radius: 16px;
@@ -132,7 +125,6 @@
         .game-id-label, .player-label { font-size: 0.6rem; color: rgba(255,255,255,0.5); }
         .game-id-value, .player-value { font-size: 0.85rem; font-weight: bold; color: #ffc107; font-family: monospace; }
         
-        /* Timer */
         .timer-card {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
             border-radius: 25px;
@@ -146,7 +138,6 @@
         .phase-label { font-size: 0.7rem; color: rgba(255,255,255,0.6); margin-top: 4px; }
         .status { font-size: 0.75rem; margin-top: 6px; color: rgba(255,255,255,0.8); }
         
-        /* Stats */
         .stats { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
         .stat-card {
             background: rgba(255,255,255,0.12);
@@ -160,7 +151,6 @@
         .stat-value { font-size: 1.2rem; font-weight: bold; color: #ffc107; }
         .stat-label { font-size: 0.6rem; opacity: 0.8; }
         
-        /* Numbers Grid */
         .numbers-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -171,7 +161,6 @@
             margin-bottom: 10px;
             max-height: 350px;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
         }
         .number {
             aspect-ratio: 1;
@@ -184,14 +173,12 @@
             color: white;
             transition: all 0.1s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            touch-action: manipulation;
         }
-        .number:active { transform: scale(0.94); background: #2a2a4e; }
+        .number:active { transform: scale(0.94); }
         .number.selected { background: linear-gradient(135deg, #28a745, #20c997); transform: scale(0.98); box-shadow: 0 0 8px rgba(40,167,69,0.4); }
         .number.drawn { background: linear-gradient(135deg, #ffc107, #ff9800); }
         .number.matched { background: linear-gradient(135deg, #dc3545, #c82333); animation: matchFlash 0.2s ease; }
         
-        /* Bet Controls */
         .bet-controls {
             background: rgba(255,255,255,0.08);
             border-radius: 16px;
@@ -206,7 +193,7 @@
             border-radius: 40px;
             padding: 3px;
         }
-        .bet-btn { width: 42px; height: 42px; border: none; border-radius: 50%; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: all 0.1s ease; touch-action: manipulation; }
+        .bet-btn { width: 42px; height: 42px; border: none; border-radius: 50%; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
         .bet-btn.minus { background: #dc3545; color: white; }
         .bet-btn.plus { background: #28a745; color: white; }
         .bet-btn:active { transform: scale(0.94); }
@@ -226,15 +213,12 @@
             border-radius: 40px;
             font-weight: bold;
             width: 100%;
-            transition: all 0.1s ease;
-            touch-action: manipulation;
             font-size: 0.85rem;
         }
         .add-bet-btn:active, .clear-btn:active { transform: scale(0.97); }
         .add-bet-btn { background: linear-gradient(135deg, #ffc107, #ff9800); border: none; }
         .clear-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: white; }
         
-        /* Bets List */
         .bets-list {
             background: rgba(255,255,255,0.08);
             border-radius: 14px;
@@ -242,25 +226,27 @@
             margin-bottom: 10px;
             max-height: 150px;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
         }
         .bet-item {
             background: rgba(0,0,0,0.4);
             border-radius: 10px;
             padding: 8px 10px;
             margin-bottom: 6px;
-            transition: all 0.1s ease;
             animation: slideIn 0.2s ease;
             font-size: 0.8rem;
         }
+        .bet-item.won { background: rgba(40,167,69,0.3); border-left: 3px solid #28a745; }
+        .bet-item.lost { background: rgba(220,53,69,0.2); border-left: 3px solid #dc3545; }
         .bet-item.highlight { background: rgba(40,167,69,0.5); border-left: 3px solid #28a745; }
         .bet-numbers { font-family: monospace; color: #ffc107; font-weight: bold; font-size: 0.75rem; }
-        .remove-bet { background: none; border: none; color: #dc3545; cursor: pointer; float: right; font-size: 1rem; padding: 0 8px; touch-action: manipulation; }
-        .remove-bet:active { transform: scale(1.1); }
+        .remove-bet { background: none; border: none; color: #dc3545; cursor: pointer; float: right; font-size: 1rem; padding: 0 8px; }
         .bet-amount { color: #28a745; font-weight: bold; font-size: 0.7rem; }
+        .bet-result { font-size: 0.65rem; margin-top: 4px; }
+        .bet-result.win { color: #28a745; }
+        .bet-result.loss { color: #dc3545; }
+        
         .total { text-align: right; padding: 8px; border-top: 1px solid rgba(255,255,255,0.1); font-weight: bold; color: white; font-size: 0.9rem; }
         
-        /* Results Bar */
         .results-bar {
             position: fixed;
             bottom: 0;
@@ -270,18 +256,16 @@
             border-top: 1px solid rgba(255,193,7,0.3);
             padding: 10px 12px;
             transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transition: transform 0.3s ease;
             z-index: 100;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
         }
         .results-bar.show { transform: translateY(0); }
         .results-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.7rem; }
-        .results-numbers { font-family: monospace; font-size: 0.7rem; color: #ffc107; word-break: break-all; max-width: 60%; }
+        .results-numbers { font-family: monospace; font-size: 0.7rem; color: #ffc107; word-break: break-all; max-width: 50%; }
         .results-win { color: #28a745; font-weight: bold; }
         .results-lose { color: #dc3545; font-weight: bold; }
-        .close-results { position: absolute; top: 2px; right: 8px; background: none; border: none; color: white; font-size: 1rem; cursor: pointer; padding: 5px; touch-action: manipulation; }
+        .close-results { position: absolute; top: 2px; right: 8px; background: none; border: none; color: white; font-size: 1rem; cursor: pointer; }
         
-        /* Drawing Number */
         .drawing-number {
             position: fixed;
             top: 50%;
@@ -300,33 +284,34 @@
             z-index: 1000;
             animation: numberPop 0.3s ease;
             border: 2px solid rgba(255,193,7,0.5);
-            box-shadow: 0 0 30px rgba(255,193,7,0.5);
             font-family: monospace;
             backdrop-filter: blur(10px);
         }
-        .drawing-number.matched { color: #ff6b6b; border-color: rgba(220,53,69,0.5); box-shadow: 0 0 30px rgba(220,53,69,0.5); }
+        .drawing-number.matched { color: #ff6b6b; border-color: rgba(220,53,69,0.5); }
         .drawing-number.fade-out { animation: numberFadeOut 0.15s ease forwards; }
         
         .loading-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #ffc107; animation: spin 0.8s linear infinite; margin-right: 6px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        .toast-notification {
+        .toast-win {
             position: fixed;
-            bottom: 80px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            background: #28a745;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #28a745, #20c997);
             color: white;
-            padding: 10px 20px;
+            padding: 15px 30px;
             border-radius: 50px;
-            font-size: 0.8rem;
-            z-index: 1000;
+            font-size: 1.2rem;
+            font-weight: bold;
+            z-index: 2000;
             animation: slideUp 0.3s ease;
             white-space: nowrap;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+            text-align: center;
         }
-        @keyframes slideUp {
-            from { transform: translate(-50%, 100px); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
+        .toast-loss {
+            background: linear-gradient(135deg, #dc3545, #c82333);
         }
         
         @media (min-width: 600px) {
@@ -335,7 +320,6 @@
             .number { font-size: 0.8rem; }
         }
         @media (min-width: 768px) {
-            body { padding: 15px; padding-bottom: 90px; }
             .numbers-grid { grid-template-columns: repeat(10, 1fr); gap: 8px; padding: 15px; }
             .number { font-size: 0.85rem; border-radius: 12px; }
             .drawing-number { width: 100px; height: 100px; font-size: 2.5rem; }
@@ -353,7 +337,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header with Wallet Button -->
         <div class="header">
             <div class="logo">
                 <i class="fas fa-dice"></i>
@@ -370,7 +353,6 @@
             <button class="refresh-btn" onclick="location.reload()"><i class="fas fa-sync-alt"></i></button>
         </div>
         
-        <!-- Game Info -->
         <div class="game-info">
             <div class="game-id-box">
                 <div class="game-id-label">🎮 GAME ID</div>
@@ -382,7 +364,6 @@
             </div>
         </div>
         
-        <!-- Timer -->
         <div class="timer-card">
             <div class="timer-value" id="timer">30s</div>
             <div class="timer-bar"><div class="timer-progress" id="timerProgress" style="width: 100%"></div></div>
@@ -390,17 +371,14 @@
             <div class="status" id="status">Select numbers and add your bets!</div>
         </div>
         
-        <!-- Stats -->
         <div class="stats">
             <div class="stat-card"><div class="stat-value" id="selectedCount">0</div><div class="stat-label">Selected / 10</div></div>
             <div class="stat-card"><div class="stat-value" id="betCount">0</div><div class="stat-label">Bets</div></div>
             <div class="stat-card"><div class="stat-value" id="totalWagered">$0</div><div class="stat-label">Wagered</div></div>
         </div>
         
-        <!-- Numbers Grid -->
         <div class="numbers-grid" id="numbersGrid"></div>
         
-        <!-- Bet Controls -->
         <div class="bet-controls">
             <div class="row g-2">
                 <div class="col-5">
@@ -415,19 +393,17 @@
             </div>
         </div>
         
-        <!-- Bets List -->
         <div class="bets-list" id="betsList"><div class="text-center text-muted" style="font-size:0.7rem;">No bets yet. Select numbers!</div></div>
         <div class="total" id="totalDisplay">Total: $0</div>
     </div>
     
-    <!-- Results Bar at Bottom -->
     <div class="results-bar" id="resultsBar">
         <button class="close-results" onclick="closeResultsBar()">✖</button>
         <div class="results-content" id="resultsContent"></div>
     </div>
 
     <script>
-        // ============ SOCKET.IO CONNECTION ============
+        // ============ SOCKET.IO ============
         const socket = io();
         
         // ============ USER DATA ============
@@ -440,33 +416,36 @@
         }
         localStorage.setItem('userPhone', userPhone);
         
-        // Register user with socket for real-time balance updates
+        // Register user with socket
         socket.emit('register-user', userPhone);
         
-        // Listen for real-time balance updates from server
+        // Listen for real-time balance updates
         socket.on('balance-update', (data) => {
-            console.log('💰 Balance update received:', data);
             if (data.newBalance !== undefined) {
                 balance = data.newBalance;
                 localStorage.setItem('userBalance', balance);
                 updateBalanceDisplay();
-                showToast('Balance updated! $' + balance.toFixed(2));
             }
         });
-        
-        function showToast(message) {
-            const toast = document.createElement('div');
-            toast.className = 'toast-notification';
-            toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
         
         function updateBalanceDisplay() {
             const balanceEl = document.getElementById('balance');
             balanceEl.classList.add('balance-update');
             balanceEl.textContent = `$${balance.toFixed(2)}`;
             setTimeout(() => balanceEl.classList.remove('balance-update'), 300);
+        }
+        
+        function showWinLossToast(winAmount, totalBet) {
+            const isWin = winAmount > 0;
+            const toast = document.createElement('div');
+            toast.className = `toast-win ${isWin ? '' : 'toast-loss'}`;
+            if (isWin) {
+                toast.innerHTML = `🎉 YOU WON! +$${winAmount.toFixed(2)} 🎉`;
+            } else {
+                toast.innerHTML = `😢 YOU LOST! -$${totalBet.toFixed(2)} 😢`;
+            }
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
         }
         
         // ============ GAME STATE ============
@@ -480,24 +459,11 @@
         const PLAYER_NUMBER = 190782;
         document.getElementById('playerNumber').textContent = PLAYER_NUMBER;
         
-        // ============ UI ELEMENTS ============
-        const balanceEl = document.getElementById('balance');
-        const gameIdEl = document.getElementById('gameId');
-        const timerEl = document.getElementById('timer');
-        const timerProgress = document.getElementById('timerProgress');
-        const statusEl = document.getElementById('status');
-        const phaseLabel = document.getElementById('phaseLabel');
-        const selectedCountEl = document.getElementById('selectedCount');
-        const betCountEl = document.getElementById('betCount');
-        const totalWageredEl = document.getElementById('totalWagered');
-        const totalDisplayEl = document.getElementById('totalDisplay');
-        
-        // ============ HELPER FUNCTIONS ============
         function updateTotal() {
             const total = bets.reduce((s, b) => s + b.amount, 0);
-            totalWageredEl.textContent = `$${total.toFixed(2)}`;
-            totalDisplayEl.innerHTML = `Total: $${total.toFixed(2)}`;
-            betCountEl.textContent = bets.length;
+            document.getElementById('totalWagered').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('totalDisplay').innerHTML = `Total: $${total.toFixed(2)}`;
+            document.getElementById('betCount').textContent = bets.length;
         }
         
         function renderBets() {
@@ -511,6 +477,7 @@
                     <button class="remove-bet" data-idx="${i}">✖</button>
                     <span class="bet-numbers">🎲 ${bet.numbers.join(', ')}</span><br>
                     <span class="bet-amount">$${bet.amount.toFixed(2)}</span>
+                    <div class="bet-result" id="bet-result-${i}">⏳ Pending...</div>
                 </div>
             `).join('');
             
@@ -534,7 +501,6 @@
             clearSelection();
         }
         
-        // ============ NUMBER GRID ============
         function createNumberGrid() {
             const grid = document.getElementById('numbersGrid');
             grid.innerHTML = '';
@@ -559,13 +525,13 @@
                 selectedNumbers.splice(idx, 1);
                 btn.classList.remove('selected');
             }
-            selectedCountEl.textContent = selectedNumbers.length;
+            document.getElementById('selectedCount').textContent = selectedNumbers.length;
         }
         
         function clearSelection() {
             selectedNumbers = [];
             document.querySelectorAll('.number').forEach(btn => btn.classList.remove('selected'));
-            selectedCountEl.textContent = '0';
+            document.getElementById('selectedCount').textContent = '0';
         }
         
         function resetGrid() {
@@ -574,7 +540,6 @@
             });
         }
         
-        // ============ BET PLACEMENT ============
         document.getElementById('addBetBtn').onclick = () => {
             if (!canBet) { alert('Betting closed!'); return; }
             const amount = parseFloat(document.getElementById('betAmount').value);
@@ -601,28 +566,26 @@
             document.getElementById('betAmount').value = v + 1;
         };
         
-        // ============ SMOOTH TIMER ============
         let lastTimeLeft = 30;
         function updateTimerSmooth(timeLeft) {
             if (timeLeft !== lastTimeLeft) {
-                timerEl.style.transform = 'scale(1.05)';
-                setTimeout(() => timerEl.style.transform = '', 100);
+                document.getElementById('timer').style.transform = 'scale(1.05)';
+                setTimeout(() => document.getElementById('timer').style.transform = '', 100);
                 lastTimeLeft = timeLeft;
             }
-            timerEl.textContent = timeLeft + 's';
+            document.getElementById('timer').textContent = timeLeft + 's';
             const percent = (timeLeft / 30) * 100;
-            timerProgress.style.width = Math.max(0, percent) + '%';
+            document.getElementById('timerProgress').style.width = Math.max(0, percent) + '%';
             
             if (percent <= 20) {
-                timerProgress.style.background = 'linear-gradient(90deg, #ffc107, #dc3545)';
+                document.getElementById('timerProgress').style.background = 'linear-gradient(90deg, #ffc107, #dc3545)';
             } else if (percent <= 50) {
-                timerProgress.style.background = 'linear-gradient(90deg, #28a745, #ffc107)';
+                document.getElementById('timerProgress').style.background = 'linear-gradient(90deg, #28a745, #ffc107)';
             } else {
-                timerProgress.style.background = 'linear-gradient(90deg, #28a745, #20c997)';
+                document.getElementById('timerProgress').style.background = 'linear-gradient(90deg, #28a745, #20c997)';
             }
         }
         
-        // ============ DRAWING ANIMATION ============
         async function animateNumber(num, isMatch, index, total) {
             return new Promise((resolve) => {
                 const div = document.createElement('div');
@@ -630,7 +593,7 @@
                 div.textContent = num;
                 document.body.appendChild(div);
                 
-                statusEl.innerHTML = `🎲 Drawing ${index + 1}/${total}...`;
+                document.getElementById('status').innerHTML = `🎲 Drawing ${index + 1}/${total}...`;
                 
                 const btn = document.querySelector(`.number[data-num="${num}"]`);
                 if (btn) {
@@ -640,10 +603,7 @@
                         bets.forEach((bet, idx) => {
                             if (bet.numbers.includes(num)) {
                                 const betEl = document.querySelector(`.bet-item[data-idx="${idx}"]`);
-                                if (betEl) {
-                                    betEl.classList.add('highlight');
-                                    setTimeout(() => betEl.classList.remove('highlight'), 500);
-                                }
+                                if (betEl) betEl.classList.add('highlight');
                             }
                         });
                     }
@@ -667,7 +627,26 @@
             isDrawing = false;
         }
         
-        // ============ RESULTS BAR ============
+        function updateBetResults(betResults) {
+            bets.forEach((bet, idx) => {
+                const result = betResults.find(r => r.betId === bet.id) || betResults[idx];
+                if (result) {
+                    const resultDiv = document.getElementById(`bet-result-${idx}`);
+                    if (resultDiv) {
+                        if (result.winAmount > 0) {
+                            resultDiv.innerHTML = `🏆 WON: +$${result.winAmount.toFixed(2)}`;
+                            resultDiv.className = 'bet-result win';
+                            document.querySelector(`.bet-item[data-idx="${idx}"]`).classList.add('won');
+                        } else {
+                            resultDiv.innerHTML = `💸 LOST: -$${bet.amount.toFixed(2)}`;
+                            resultDiv.className = 'bet-result loss';
+                            document.querySelector(`.bet-item[data-idx="${idx}"]`).classList.add('lost');
+                        }
+                    }
+                }
+            });
+        }
+        
         function showResultsBar(gameId, drawnNumbers, winAmount, totalBet) {
             const resultsBar = document.getElementById('resultsBar');
             const resultsContent = document.getElementById('resultsContent');
@@ -682,28 +661,27 @@
                 <div style="text-align:right">
                     <div>Bet: $${totalBet.toFixed(2)}</div>
                     <div class="${isWin ? 'results-win' : 'results-lose'}">
-                        ${isWin ? '🏆 +$' + winAmount.toFixed(2) : '😢 -$' + totalBet.toFixed(2)}
+                        ${isWin ? '🏆 WON: +$' + winAmount.toFixed(2) : '😢 LOST: -$' + totalBet.toFixed(2)}
                     </div>
                     <div style="font-size:0.65rem;">Net: ${netResult >= 0 ? '+' : ''}$${netResult.toFixed(2)}</div>
                 </div>
             `;
             resultsBar.classList.add('show');
             
-            // Update balance display after win/loss
-            updateBalanceDisplay();
+            // Show toast notification
+            showWinLossToast(winAmount, totalBet);
             
             setTimeout(() => {
                 if (resultsBar.classList.contains('show')) {
                     resultsBar.classList.remove('show');
                 }
-            }, 6000);
+            }, 8000);
         }
         
         function closeResultsBar() {
             document.getElementById('resultsBar').classList.remove('show');
         }
         
-        // ============ CLEAR BOARD FOR NEXT ROUND ============
         function clearBoardForNextRound() {
             bets = [];
             updateTotal();
@@ -716,11 +694,11 @@
             canBet = true;
         }
         
-        // ============ PLACE BETS ============
         async function submitBetsToServer() {
             if (bets.length === 0) return false;
-            statusEl.innerHTML = '<span class="loading-spinner"></span> Placing bets...';
+            document.getElementById('status').innerHTML = '<span class="loading-spinner"></span> Placing bets...';
             let allSuccess = true;
+            let betIds = [];
             
             for (const bet of bets) {
                 try {
@@ -738,6 +716,8 @@
                         balance = data.newBalance;
                         localStorage.setItem('userBalance', balance);
                         updateBalanceDisplay();
+                        bet.id = data.betId;
+                        betIds.push(data.betId);
                     } else {
                         allSuccess = false;
                     }
@@ -746,32 +726,49 @@
                     allSuccess = false; 
                 }
             }
-            statusEl.innerHTML = allSuccess ? '✅ Bets placed!' : '⚠️ Some bets failed';
+            document.getElementById('status').innerHTML = allSuccess ? '✅ Bets placed! Watching draw...' : '⚠️ Some bets failed';
             return allSuccess;
         }
         
-        // ============ FETCH RESULTS ============
         async function fetchAndShowResults(gameId, drawnNumbers) {
             try {
                 const res = await fetch(`/keno/history/${userPhone}`);
                 const history = await res.json();
-                const latest = history.find(h => h.game_id === gameId);
+                const roundBets = history.filter(h => h.game_id === gameId);
                 const totalBet = bets.reduce((s, b) => s + b.amount, 0);
-                const winAmount = latest?.win_amount || 0;
+                const totalWinAmount = roundBets.reduce((s, b) => s + (b.win_amount || 0), 0);
                 
-                showResultsBar(gameId, drawnNumbers, winAmount, totalBet);
+                // Update per-bet results
+                const betResults = bets.map((bet, idx) => {
+                    const match = roundBets.find(r => r.selected_numbers && r.selected_numbers.join(',') === bet.numbers.join(','));
+                    return {
+                        betId: bet.id,
+                        winAmount: match?.win_amount || 0,
+                        matches: match?.selected_numbers?.filter(n => drawnNumbers.includes(n)).length || 0
+                    };
+                });
+                updateBetResults(betResults);
                 
-                const balanceRes = await fetch(`/wallet/${userPhone}`);
-                const balanceData = await balanceRes.json();
-                if (balanceData.balance !== undefined && balanceData.balance !== balance) {
-                    balance = balanceData.balance;
-                    localStorage.setItem('userBalance', balance);
-                    updateBalanceDisplay();
-                }
+                showResultsBar(gameId, drawnNumbers, totalWinAmount, totalBet);
+                
+                // Refresh balance after round
+                await refreshBalance();
+                
             } catch(e) { console.error('Fetch results error:', e); }
         }
         
-        // ============ POLL GAME STATE ============
+        async function refreshBalance() {
+            try {
+                const res = await fetch(`/wallet/${userPhone}`);
+                const data = await res.json();
+                if (data.balance !== undefined && data.balance !== balance) {
+                    balance = data.balance;
+                    localStorage.setItem('userBalance', balance);
+                    updateBalanceDisplay();
+                }
+            } catch(e) {}
+        }
+        
         async function pollGameState() {
             try {
                 const res = await fetch('/keno/state');
@@ -780,22 +777,22 @@
                 
                 if (currentGameId !== state.gameId) {
                     currentGameId = state.gameId;
-                    gameIdEl.textContent = state.gameId;
+                    document.getElementById('gameId').textContent = state.gameId;
                 }
                 
                 updateTimerSmooth(state.timeLeft);
                 
                 if (state.phase === 'betting') {
                     canBet = true;
-                    phaseLabel.innerHTML = '⏱️ BETTING WINDOW';
-                    statusEl.innerHTML = '🎲 Select numbers and add your bets!';
-                    statusEl.style.color = '#ffc107';
+                    document.getElementById('phaseLabel').innerHTML = '⏱️ BETTING WINDOW';
+                    document.getElementById('status').innerHTML = '🎲 Select numbers and add your bets!';
+                    document.getElementById('status').style.color = '#ffc107';
                 }
                 else if (state.phase === 'drawing') {
                     canBet = false;
-                    phaseLabel.innerHTML = '🎲 DRAWING NUMBERS';
-                    statusEl.innerHTML = '🎲 Numbers are being drawn...';
-                    statusEl.style.color = '#ff9800';
+                    document.getElementById('phaseLabel').innerHTML = '🎲 DRAWING NUMBERS';
+                    document.getElementById('status').innerHTML = '🎲 Numbers are being drawn...';
+                    document.getElementById('status').style.color = '#ff9800';
                     
                     if (bets.length > 0 && !window.betsSubmitted) {
                         window.betsSubmitted = true;
@@ -809,9 +806,9 @@
                 }
                 else if (state.phase === 'results') {
                     canBet = false;
-                    phaseLabel.innerHTML = '📊 RESULTS';
-                    statusEl.innerHTML = '✅ Round complete!';
-                    statusEl.style.color = '#28a745';
+                    document.getElementById('phaseLabel').innerHTML = '📊 RESULTS';
+                    document.getElementById('status').innerHTML = '✅ Round complete!';
+                    document.getElementById('status').style.color = '#28a745';
                     
                     if (state.drawnNumbers && !window.resultsShown) {
                         window.resultsShown = true;
@@ -819,34 +816,24 @@
                         
                         setTimeout(() => {
                             clearBoardForNextRound();
-                        }, 2500);
+                        }, 3000);
                     }
                 }
             } catch(e) { console.error('Poll error:', e); }
         }
         
-        // ============ REFRESH BALANCE ============
-        async function refreshBalance() {
-            try {
-                const res = await fetch(`/wallet/${userPhone}`);
-                const data = await res.json();
-                if (data.balance !== undefined && data.balance !== balance) {
-                    balance = data.balance;
-                    localStorage.setItem('userBalance', balance);
-                    updateBalanceDisplay();
-                    showToast('Balance refreshed: $' + balance.toFixed(2));
-                }
-            } catch(e) {}
+        function startAutoRefresh() {
+            setInterval(refreshBalance, 5000);
         }
         
-        // ============ INITIALIZE ============
+        // Initialize
         createNumberGrid();
         updateTotal();
         renderBets();
         refreshBalance();
+        startAutoRefresh();
         
         pollingInterval = setInterval(pollGameState, 500);
-        setInterval(refreshBalance, 10000);
         
         window.addEventListener('beforeunload', () => {
             if (pollingInterval) clearInterval(pollingInterval);
