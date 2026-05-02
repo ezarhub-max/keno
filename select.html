@@ -8,7 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <script src="/socket.io/socket.io.js"></script>
 <style>
-/* Your existing styles - keep them exactly as they are */
 :root {
   --bg:        #080a0f;
   --surface:   #0d1117;
@@ -364,7 +363,6 @@ body::before {
   background: rgba(0,230,118,0.1);
   border: 1px solid rgba(0,230,118,0.3);
   color: var(--green);
-  cursor: not-allowed;
 }
 .submit-btn.disabled {
   background: var(--surface2);
@@ -622,7 +620,7 @@ body::before {
     </div>
 
     <button class="submit-btn disabled" id="submitBtn" onclick="submitAllBets()">
-      🎲 SUBMIT ALL BETS
+      🎲 SUBMIT BETS
     </button>
   </div>
 
@@ -669,7 +667,6 @@ let balance = parseFloat(localStorage.getItem('userBalance') || '0');
 let selectedNums = [];
 let pendingBets = [];
 let submittedBets = [];
-let alreadySubmitted = false;
 let canBet = true;
 let currentGameId = null;
 let numbersAnimated = false;
@@ -678,7 +675,7 @@ let isAnimating = false;
 let pollTimer = null;
 let isPolling = false;
 
-// SOCKET - with reconnect handling
+// SOCKET
 socket.emit('register-user', userPhone);
 
 socket.on('connect', () => {
@@ -746,7 +743,6 @@ function buildGrid() {
 
 function toggleNum(n, btn) {
   if (!canBet) { toast('Betting is closed for this round', 'info'); return; }
-  if (alreadySubmitted) { toast('Bets already submitted this round', 'info'); return; }
   const idx = selectedNums.indexOf(n);
   if (idx === -1) {
     if (selectedNums.length >= 10) { toast('Maximum 10 numbers per bet', 'info'); return; }
@@ -767,7 +763,6 @@ function clearSelection() {
 
 function quickPick(count) {
   if (!canBet) return;
-  if (alreadySubmitted) { toast('Bets already submitted this round', 'info'); return; }
   clearSelection();
   const pool = Array.from({length:80},(_,i)=>i+1);
   for (let i = pool.length-1; i > 0; i--) {
@@ -798,12 +793,11 @@ document.getElementById('plusBtn').onclick = () => {
 
 document.getElementById('addBetBtn').onclick = () => {
   if (!canBet) { toast('Betting is closed!', 'info'); return; }
-  if (alreadySubmitted) { toast('Already submitted this round', 'info'); return; }
   if (selectedNums.length === 0) { toast('Pick at least one number first', 'info'); return; }
   const amt = parseFloat(document.getElementById('betAmountInput').value);
   if (!amt || amt <= 0) { toast('Enter a valid amount', 'info'); return; }
 
-  const used = [...pendingBets,...submittedBets].reduce((s,b)=>s+b.amount, 0);
+  const used = [...pendingBets, ...submittedBets].reduce((s,b)=>s+b.amount, 0);
   if (used + amt > balance) {
     toast('Insufficient balance!', 'loss'); return;
   }
@@ -817,25 +811,26 @@ document.getElementById('addBetBtn').onclick = () => {
 };
 
 document.getElementById('clearBetsBtn').onclick = () => {
-  if (!canBet && alreadySubmitted) { toast('Betting closed', 'info'); return; }
   pendingBets = [];
   renderSlip();
   updateStats();
   updateSubmitBtn();
 };
 
+// ============ FIXED: SUBMIT FUNCTION - DOES NOT LOCK USER ============
 async function submitAllBets() {
   if (!canBet) { toast('Betting is closed!', 'info'); return; }
-  if (alreadySubmitted) { toast('Bets already placed this round', 'info'); return; }
+  if (pendingBets.length === 0 && submittedBets.length > 0) {
+    toast('No new bets to submit! Add more bets first.', 'info');
+    return;
+  }
   if (pendingBets.length === 0) { toast('Add at least one bet first', 'info'); return; }
 
-  alreadySubmitted = true;
-  canBet = false;
-  updateSubmitBtn();
   setStatus('Placing bets…');
 
   const toSend = [...pendingBets];
   let placed = 0;
+  let failed = 0;
 
   for (const bet of toSend) {
     try {
@@ -855,36 +850,40 @@ async function submitAllBets() {
         localStorage.setItem('userBalance', balance);
         renderBalance(true);
         placed++;
+        
+        // Remove from pending
+        const index = pendingBets.indexOf(bet);
+        if (index !== -1) pendingBets.splice(index, 1);
+      } else {
+        failed++;
+        toast('Bet rejected: ' + data.error, 'loss');
       }
     } catch(e) {
       console.error('Bet error:', e);
+      failed++;
     }
   }
 
-  pendingBets = [];
   renderSlip();
   updateStats();
   updateSubmitBtn();
 
   if (placed > 0) {
-    setStatus(`✓ ${placed} bet${placed>1?'s':''} placed — watching draw…`);
+    setStatus(`✓ ${placed} bet${placed>1?'s':''} placed — you can add more bets!`);
     toast(`✓ ${placed} bet${placed>1?'s':''} placed!`, 'info');
   } else {
-    alreadySubmitted = false;
-    canBet = true;
     setStatus('Bets failed. Try again.');
-    updateSubmitBtn();
   }
 }
 
 function updateSubmitBtn() {
   const btn = document.getElementById('submitBtn');
-  if (alreadySubmitted) {
-    btn.className = 'submit-btn submitted';
-    btn.textContent = `✓ ${submittedBets.length} bet${submittedBets.length!==1?'s':''} placed`;
-  } else if (!canBet) {
+  if (!canBet) {
     btn.className = 'submit-btn disabled';
     btn.textContent = '⏳ Betting Closed';
+  } else if (pendingBets.length === 0 && submittedBets.length > 0) {
+    btn.className = 'submit-btn ready';
+    btn.textContent = `🎲 ADD MORE BETS (${submittedBets.length} placed)`;
   } else if (pendingBets.length === 0) {
     btn.className = 'submit-btn disabled';
     btn.textContent = '🎲 Add bets first';
@@ -909,7 +908,7 @@ function renderSlip() {
   let html = '';
   
   if (pendingBets.length > 0) {
-    html += `<div style="font-size:0.6rem; color:var(--muted); padding:4px 0;">PENDING (${pendingBets.length})</div>`;
+    html += `<div style="font-size:0.6rem; color:var(--muted); padding:4px 0;">📝 PENDING (${pendingBets.length})</div>`;
     pendingBets.forEach((bet,i) => {
       html += `<div class="slip-item">
         <button class="remove-btn" data-i="${i}">✕</button>
@@ -920,7 +919,7 @@ function renderSlip() {
   }
   
   if (submittedBets.length > 0) {
-    html += `<div style="font-size:0.6rem; color:var(--muted); padding:4px 0; margin-top:8px;">SUBMITTED (${submittedBets.length})</div>`;
+    html += `<div style="font-size:0.6rem; color:var(--green); padding:4px 0; margin-top:8px;">✅ SUBMITTED (${submittedBets.length})</div>`;
     submittedBets.forEach((bet,i) => {
       html += `<div class="slip-item placed" id="sbet-${i}">
         <div style="flex:1">
@@ -1051,7 +1050,6 @@ function closePanel() { document.getElementById('resultsPanel').classList.remove
 function resetRound() {
   pendingBets = [];
   submittedBets = [];
-  alreadySubmitted = false;
   numbersAnimated = false;
   resultsShown = false;
   isAnimating = false;
@@ -1083,7 +1081,6 @@ async function poll() {
       document.getElementById('gameIdDisplay').textContent = state.gameId;
     }
 
-    // Only update UI if values changed (prevents flicker)
     if (lastPhase !== state.phase || lastTimeLeft !== state.timeLeft) {
       setPhaseUI(state.phase, state.timeLeft);
       lastPhase = state.phase;
@@ -1091,7 +1088,8 @@ async function poll() {
     }
 
     if (state.phase === 'betting') {
-      if (!alreadySubmitted) { canBet = true; setStatus('Select numbers and click SUBMIT ALL BETS'); }
+      canBet = true;
+      setStatus('Select numbers and click SUBMIT BETS');
       updateSubmitBtn();
     } else if (state.phase === 'drawing') {
       canBet = false;
