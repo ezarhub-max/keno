@@ -626,8 +626,8 @@ app.post('/withdraw', async (req, res) => {
     }
 });
 
-// ============================================
-// KENO GAME BACKEND - SHARED FOR ALL PLAYERS
+//// ============================================
+// KENO GAME BACKEND - COMPLETELY FIXED
 // ============================================
 
 let currentKenoGameId = null;
@@ -643,6 +643,20 @@ const KENO_BETTING_DURATION = 30000;
 const KENO_DRAWING_DURATION = 30000;
 const KENO_RESULTS_DURATION = 5000;
 
+// KENO PAYOUT MULTIPLIERS (Standard)
+const KENO_PAYOUTS = {
+    1: {1: 2.5},
+    2: {2: 12, 1: 1.5},
+    3: {3: 45, 2: 4, 1: 1.2},
+    4: {4: 150, 3: 12, 2: 2.5, 1: 1},
+    5: {5: 400, 4: 35, 3: 7, 2: 2, 1: 1},
+    6: {6: 1000, 5: 100, 4: 20, 3: 5, 2: 2, 1: 1},
+    7: {7: 2500, 6: 250, 5: 50, 4: 12, 3: 3, 2: 1.5},
+    8: {8: 5000, 7: 500, 6: 100, 5: 25, 4: 6, 3: 2},
+    9: {9: 10000, 8: 1000, 7: 200, 6: 50, 5: 12, 4: 4},
+    10: {10: 20000, 9: 2000, 8: 400, 7: 100, 6: 25, 5: 6, 4: 2}
+};
+
 function drawKenoNumbers(gameNumber) {
     const numbers = [];
     const isDivisibleBy5 = gameNumber % 5 === 0;
@@ -655,16 +669,8 @@ function drawKenoNumbers(gameNumber) {
 }
 
 function calculateKenoPayout(selectedCount, matches, betAmount) {
-    const multipliers = {
-        1: {1: 2.5}, 2: {2: 12, 1: 1.5}, 3: {3: 45, 2: 4, 1: 1.2},
-        4: {4: 150, 3: 12, 2: 2.5, 1: 1}, 5: {5: 400, 4: 35, 3: 7, 2: 2, 1: 1},
-        6: {6: 1000, 5: 100, 4: 20, 3: 5, 2: 2, 1: 1},
-        7: {7: 2500, 6: 250, 5: 50, 4: 12, 3: 3, 2: 1.5},
-        8: {8: 5000, 7: 500, 6: 100, 5: 25, 4: 6, 3: 2},
-        9: {9: 10000, 8: 1000, 7: 200, 6: 50, 5: 12, 4: 4},
-        10: {10: 20000, 9: 2000, 8: 400, 7: 100, 6: 25, 5: 6, 4: 2}
-    };
-    return betAmount * (multipliers[selectedCount]?.[matches] || 0);
+    const multiplier = KENO_PAYOUTS[selectedCount]?.[matches] || 0;
+    return betAmount * multiplier;
 }
 
 function startNewKenoRound() {
@@ -676,45 +682,156 @@ function startNewKenoRound() {
     kenoRoundPhase = 'betting';
     kenoRoundStartTime = Date.now();
     kenoRoundBets = [];
-    console.log(`${colors.magenta}🎲 NEW KENO ROUND: ${currentKenoGameId} - BETTING PHASE (30s)${colors.reset}`);
+    console.log(`🎲 NEW KENO ROUND: ${currentKenoGameId} - BETTING PHASE (30s)`);
     kenoRoundTimer = setTimeout(() => startDrawingPhase(), KENO_BETTING_DURATION);
 }
 
 function startDrawingPhase() {
     kenoRoundPhase = 'drawing';
     kenoRoundStartTime = Date.now();
-    console.log(`${colors.yellow}🎨 KENO ROUND ${currentKenoGameId} - DRAWING PHASE (30s)${colors.reset}`);
+    console.log(`🎨 KENO ROUND ${currentKenoGameId} - DRAWING PHASE (30s)`);
     kenoRoundTimer = setTimeout(() => startResultsPhase(), KENO_DRAWING_DURATION);
 }
 
 async function startResultsPhase() {
     kenoRoundPhase = 'results';
-    console.log(`${colors.blue}📊 KENO ROUND ${currentKenoGameId} - RESULTS PHASE (5s)${colors.reset}`);
+    console.log(`📊 KENO ROUND ${currentKenoGameId} - RESULTS PHASE (5s)`);
+    
+    // Process all bets in this round
     for (const bet of kenoRoundBets) {
-        const matches = bet.selectedNumbers.filter(n => currentKenoDrawnNumbers.includes(n)).length;
-        const winAmount = calculateKenoPayout(bet.selectedNumbers.length, matches, bet.betAmount);
+        // Calculate matches
+        const matches = bet.selected_numbers.filter(n => currentKenoDrawnNumbers.includes(n)).length;
+        const winAmount = calculateKenoPayout(bet.selected_numbers.length, matches, bet.bet_amount);
+        
+        // Update bets table
+        await pool.query(
+            `UPDATE bets 
+             SET win_amount = $1, 
+                 won = $2, 
+                 drawn_numbers = $3 
+             WHERE id = $4`,
+            [winAmount, winAmount > 0, currentKenoDrawnNumbers, bet.bet_id]
+        );
+        
+        // Update user balance if won
         if (winAmount > 0) {
-            await pool.query('UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2', [winAmount, bet.userId]);
+            await pool.query(
+                'UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2',
+                [winAmount, bet.user_id]
+            );
+            // Send real-time balance update
             await emitBalanceUpdate(bet.phone);
+            console.log(`💰 User ${bet.phone} won $${winAmount}`);
         }
-        await pool.query(`UPDATE bets SET win_amount = $1, won = $2, drawn_numbers = $3 WHERE id = $4`, 
-            [winAmount, winAmount > 0, currentKenoDrawnNumbers, bet.betId]);
     }
+    
     kenoRoundTimer = setTimeout(() => {
         kenoRoundActive = false;
         startNewKenoRound();
     }, KENO_RESULTS_DURATION);
 }
 
-// Start first round
-startNewKenoRound();
+// ============ FIXED: KENO BET ENDPOINT ============
+app.post('/keno/bet', async (req, res) => {
+    // ACCEPT BOTH field naming conventions for compatibility
+    const phone = req.body.phone;
+    const selectedNumbers = req.body.selectedNumbers || req.body.selected_numbers;
+    const betAmount = req.body.betAmount || req.body.bet_amount;
+    
+    // Validation
+    if (!phone) {
+        return res.status(400).json({ error: 'Phone number is required' });
+    }
+    if (!selectedNumbers || !Array.isArray(selectedNumbers) || selectedNumbers.length < 1 || selectedNumbers.length > 10) {
+        return res.status(400).json({ error: 'Select 1-10 numbers' });
+    }
+    if (!betAmount || betAmount <= 0) {
+        return res.status(400).json({ error: 'Valid bet amount is required' });
+    }
+    if (kenoRoundPhase !== 'betting') {
+        return res.status(400).json({ error: 'Betting closed for this round' });
+    }
+    
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        // Get user with FOR UPDATE (lock row)
+        const user = await client.query(
+            'SELECT id, wallet_balance FROM users WHERE phone = $1 FOR UPDATE',
+            [phone]
+        );
+        if (user.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const currentBalance = parseFloat(user.rows[0].wallet_balance);
+        if (currentBalance < betAmount) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Insufficient balance' });
+        }
+        
+        // Deduct bet amount
+        const newBalance = currentBalance - betAmount;
+        await client.query(
+            'UPDATE users SET wallet_balance = $1 WHERE id = $2',
+            [newBalance, user.rows[0].id]
+        );
+        
+        // Save bet with correct field names
+        const betResult = await client.query(
+            `INSERT INTO bets (user_id, game_id, bet_amount, selected_numbers, created_at) 
+             VALUES ($1, $2, $3, $4, NOW()) 
+             RETURNING id`,
+            [user.rows[0].id, currentKenoGameId, betAmount, selectedNumbers]
+        );
+        
+        // Store in memory for round processing
+        kenoRoundBets.push({
+            bet_id: betResult.rows[0].id,
+            user_id: user.rows[0].id,
+            phone: phone,
+            selected_numbers: selectedNumbers,
+            bet_amount: betAmount
+        });
+        
+        await client.query('COMMIT');
+        
+        // Send real-time balance update
+        await emitBalanceUpdate(phone);
+        
+        const timeLeft = Math.max(0, Math.floor((KENO_BETTING_DURATION - (Date.now() - kenoRoundStartTime)) / 1000));
+        
+        res.json({
+            success: true,
+            newBalance: newBalance,
+            gameId: currentKenoGameId,
+            gameNumber: currentKenoGameNumber,
+            timeLeft: timeLeft,
+            message: 'Bet placed successfully!'
+        });
+        
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Keno bet error:', error);
+        res.status(500).json({ error: error.message });
+    } finally {
+        client.release();
+    }
+});
 
+// ============ FIXED: KENO STATE ENDPOINT ============
 app.get('/keno/state', (req, res) => {
     let timeLeft = 0;
     const elapsed = Date.now() - kenoRoundStartTime;
-    if (kenoRoundPhase === 'betting') timeLeft = Math.max(0, Math.floor((KENO_BETTING_DURATION - elapsed) / 1000));
-    else if (kenoRoundPhase === 'drawing') timeLeft = Math.max(0, Math.floor((KENO_DRAWING_DURATION - elapsed) / 1000));
-    else timeLeft = Math.max(0, Math.floor((KENO_RESULTS_DURATION - elapsed) / 1000));
+    if (kenoRoundPhase === 'betting') {
+        timeLeft = Math.max(0, Math.floor((KENO_BETTING_DURATION - elapsed) / 1000));
+    } else if (kenoRoundPhase === 'drawing') {
+        timeLeft = Math.max(0, Math.floor((KENO_DRAWING_DURATION - elapsed) / 1000));
+    } else {
+        timeLeft = Math.max(0, Math.floor((KENO_RESULTS_DURATION - elapsed) / 1000));
+    }
     
     res.json({
         success: true,
@@ -728,52 +845,68 @@ app.get('/keno/state', (req, res) => {
     });
 });
 
-app.post('/keno/bet', async (req, res) => {
-    const { phone, selectedNumbers, betAmount } = req.body;
-    if (!selectedNumbers || selectedNumbers.length < 1 || selectedNumbers.length > 10) {
-        return res.status(400).json({ error: 'Select 1-10 numbers' });
-    }
-    if (kenoRoundPhase !== 'betting') {
-        return res.status(400).json({ error: 'Betting closed for this round' });
-    }
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-        const user = await client.query('SELECT * FROM users WHERE phone = $1 FOR UPDATE', [phone]);
-        if (user.rows.length === 0) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'User not found' }); }
-        const balance = parseFloat(user.rows[0].wallet_balance);
-        if (balance < betAmount) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Insufficient balance' }); }
-        await client.query('UPDATE users SET wallet_balance = wallet_balance - $1 WHERE id = $2', [betAmount, user.rows[0].id]);
-        
-        // Send real-time balance update
-        await emitBalanceUpdate(phone);
-        
-        const betResult = await client.query(`INSERT INTO bets (user_id, game_id, bet_amount, selected_numbers, created_at) VALUES ($1,$2,$3,$4,NOW()) RETURNING id`, 
-            [user.rows[0].id, currentKenoGameId, betAmount, selectedNumbers]);
-        kenoRoundBets.push({ betId: betResult.rows[0].id, userId: user.rows[0].id, phone, selectedNumbers, betAmount });
-        await client.query('COMMIT');
-        const timeLeft = Math.max(0, Math.floor((KENO_BETTING_DURATION - (Date.now() - kenoRoundStartTime)) / 1000));
-        res.json({ success: true, newBalance: balance - betAmount, gameId: currentKenoGameId, gameNumber: currentKenoGameNumber, timeLeft });
-    } catch(e) { 
-        await client.query('ROLLBACK');
-        console.error('Keno bet error:', e);
-        res.status(500).json({ error: e.message }); 
-    } finally { 
-        client.release(); 
-    }
-});
-
+// ============ FIXED: KENO HISTORY ENDPOINT ============
 app.get('/keno/history/:phone', async (req, res) => {
     try {
         const user = await pool.query('SELECT id FROM users WHERE phone = $1', [req.params.phone]);
-        if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-        const history = await pool.query(`SELECT * FROM bets WHERE user_id = $1 AND game_id LIKE 'KENO-%' ORDER BY created_at DESC LIMIT 20`, [user.rows[0].id]);
-        res.json(history.rows);
-    } catch(e) { 
-        console.error('Keno history error:', e);
-        res.status(500).json({ error: e.message }); 
+        if (user.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const history = await pool.query(
+            `SELECT 
+                id, 
+                game_id, 
+                bet_amount, 
+                selected_numbers, 
+                win_amount, 
+                won, 
+                drawn_numbers, 
+                created_at 
+             FROM bets 
+             WHERE user_id = $1 AND game_id LIKE 'KENO-%' 
+             ORDER BY created_at DESC 
+             LIMIT 50`,
+            [user.rows[0].id]
+        );
+        
+        // Format the response
+        const formattedHistory = history.rows.map(row => ({
+            id: row.id,
+            game_id: row.game_id,
+            bet_amount: parseFloat(row.bet_amount),
+            selected_numbers: row.selected_numbers,
+            win_amount: parseFloat(row.win_amount || 0),
+            won: row.won || false,
+            drawn_numbers: row.drawn_numbers,
+            created_at: row.created_at
+        }));
+        
+        res.json(formattedHistory);
+    } catch (error) {
+        console.error('Keno history error:', error);
+        res.status(500).json({ error: error.message });
     }
 });
+
+// Helper function for real-time balance updates
+async function emitBalanceUpdate(phone) {
+    try {
+        const result = await pool.query('SELECT wallet_balance FROM users WHERE phone = $1', [phone]);
+        if (result.rows.length > 0) {
+            const newBalance = parseFloat(result.rows[0].wallet_balance);
+            const socketId = userSockets.get(phone);
+            if (socketId) {
+                io.to(socketId).emit('balance-update', { newBalance });
+            }
+        }
+    } catch (err) {
+        console.error('Error sending balance update:', err);
+    }
+}
+
+// Start first round
+startNewKenoRound();
 
 // ============================================
 // TELEGRAM BOT INTEGRATION (MOVED TO BOTTOM)
