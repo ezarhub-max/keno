@@ -51,7 +51,6 @@ body::before {
   gap: 10px;
 }
 
-/* HEADER */
 .header {
   display: flex;
   align-items: center;
@@ -108,7 +107,6 @@ body::before {
 }
 .icon-btn:hover, .icon-btn:active { border-color: var(--cyan); color: var(--cyan); }
 
-/* GAME META */
 .game-meta {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -123,7 +121,6 @@ body::before {
 .meta-label { font-size: 0.6rem; color: var(--muted); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:2px; }
 .meta-value { font-size: 0.95rem; font-weight: 700; color: var(--amber); }
 
-/* TIMER */
 .timer-wrap {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -180,7 +177,6 @@ body::before {
   min-height: 1.2em;
 }
 
-/* STATS */
 .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
 .stat-pill {
   background: var(--surface);
@@ -192,7 +188,6 @@ body::before {
 .stat-num { font-size: 1.1rem; font-weight: 800; color: var(--amber); }
 .stat-lbl { font-size: 0.58rem; color: var(--muted); letter-spacing:0.08em; text-transform:uppercase; margin-top:1px; }
 
-/* NUMBER GRID */
 .grid-wrap {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -248,7 +243,6 @@ body::before {
   100% { transform: scale(1); }
 }
 
-/* BET CONTROLS */
 .bet-controls {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -342,7 +336,6 @@ body::before {
 }
 .clear-btn:active { border-color: var(--red); color: var(--red); }
 
-/* SUBMIT BUTTON */
 .submit-btn {
   width: 100%;
   padding: 14px;
@@ -379,7 +372,6 @@ body::before {
   cursor: not-allowed;
 }
 
-/* BET SLIP */
 .bet-slip {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -444,7 +436,6 @@ body::before {
 }
 .remove-btn:active { border-color: var(--red); color: var(--red); }
 
-/* DRAW OVERLAY */
 .draw-overlay {
   position: fixed;
   inset: 0;
@@ -470,7 +461,6 @@ body::before {
   100% { transform: scale(1); opacity:1; }
 }
 
-/* TOAST */
 .keno-toast {
   position: fixed;
   bottom: 86px;
@@ -498,7 +488,6 @@ body::before {
   100% { opacity:0; transform:translateX(-50%) translateY(-8px); }
 }
 
-/* RESULTS PANEL */
 .results-panel {
   position: fixed;
   bottom:0; left:0; right:0;
@@ -562,7 +551,6 @@ body::before {
 <body>
 <div class="app">
 
-  <!-- HEADER -->
   <div class="header">
     <div class="logo">KE<span>NO</span></div>
     <div class="header-right">
@@ -575,7 +563,6 @@ body::before {
     </div>
   </div>
 
-  <!-- GAME META -->
   <div class="game-meta">
     <div class="meta-card">
       <div class="meta-label">Game ID</div>
@@ -587,7 +574,6 @@ body::before {
     </div>
   </div>
 
-  <!-- TIMER -->
   <div class="timer-wrap" id="timerWrap">
     <div class="timer-top">
       <div class="timer-digits" id="timerDigits">—</div>
@@ -599,14 +585,12 @@ body::before {
     <div class="timer-status" id="timerStatus">Connecting…</div>
   </div>
 
-  <!-- STATS -->
   <div class="stats-row">
     <div class="stat-pill"><div class="stat-num" id="statSelected">0</div><div class="stat-lbl">Selected</div></div>
     <div class="stat-pill"><div class="stat-num" id="statBets">0</div><div class="stat-lbl">Bets</div></div>
     <div class="stat-pill"><div class="stat-num" id="statTotal">$0</div><div class="stat-lbl">Staked</div></div>
   </div>
 
-  <!-- NUMBER GRID -->
   <div class="grid-wrap">
     <div class="grid-header">
       <span class="grid-title">Pick 1 – 10 numbers</span>
@@ -619,7 +603,6 @@ body::before {
     <div class="number-grid" id="numberGrid"></div>
   </div>
 
-  <!-- BET CONTROLS -->
   <div class="bet-controls">
     <div class="bet-row">
       <div class="amount-ctrl">
@@ -637,12 +620,11 @@ body::before {
       <button class="preset-btn" onclick="setAmount(100)">$100</button>
     </div>
 
-    <button class="submit-btn disabled" id="submitBtn" onclick="onSubmitClick()">
-      🎲 PLACE BETS
+    <button class="submit-btn disabled" id="submitBtn" onclick="submitAllBets()">
+      🎲 SUBMIT ALL BETS
     </button>
   </div>
 
-  <!-- BET SLIP -->
   <div class="bet-slip">
     <div class="slip-header">
       <span class="slip-title">Bet Slip</span>
@@ -655,10 +637,8 @@ body::before {
 
 </div>
 
-<!-- Floating draw ball -->
 <div class="draw-overlay" id="drawOverlay"></div>
 
-<!-- Sliding results panel -->
 <div class="results-panel" id="resultsPanel">
   <div class="panel-top">
     <span class="panel-gid" id="panelGid">—</span>
@@ -741,6 +721,7 @@ function buildGrid() {
 
 function toggleNum(n, btn) {
   if (!canBet) { toast('Betting is closed for this round', 'info'); return; }
+  if (alreadySubmitted) { toast('Bets already submitted this round', 'info'); return; }
   const idx = selectedNums.indexOf(n);
   if (idx === -1) {
     if (selectedNums.length >= 10) { toast('Maximum 10 numbers per bet', 'info'); return; }
@@ -761,6 +742,7 @@ function clearSelection() {
 
 function quickPick(count) {
   if (!canBet) return;
+  if (alreadySubmitted) { toast('Bets already submitted this round', 'info'); return; }
   clearSelection();
   const pool = Array.from({length:80},(_,i)=>i+1);
   for (let i = pool.length-1; i > 0; i--) {
@@ -789,9 +771,10 @@ document.getElementById('plusBtn').onclick = () => {
   el.value = (parseFloat(el.value)||0) + 1;
 };
 
+// ADD BET BUTTON - Allows multiple bets
 document.getElementById('addBetBtn').onclick = () => {
   if (!canBet) { toast('Betting is closed!', 'info'); return; }
-  if (alreadySubmitted) { toast('Already submitted — wait for next round', 'info'); return; }
+  if (alreadySubmitted) { toast('Already submitted this round', 'info'); return; }
   if (selectedNums.length === 0) { toast('Pick at least one number first', 'info'); return; }
   const amt = parseFloat(document.getElementById('betAmountInput').value);
   if (!amt || amt <= 0) { toast('Enter a valid amount', 'info'); return; }
@@ -806,6 +789,7 @@ document.getElementById('addBetBtn').onclick = () => {
   renderSlip();
   updateStats();
   updateSubmitBtn();
+  toast(`Added bet: ${selectedNums.length} numbers for $${amt}`, 'info');
 };
 
 document.getElementById('clearBetsBtn').onclick = () => {
@@ -816,8 +800,9 @@ document.getElementById('clearBetsBtn').onclick = () => {
   updateSubmitBtn();
 };
 
-async function onSubmitClick() {
-  if (!canBet)          { toast('Betting is closed!', 'info'); return; }
+// SUBMIT ALL BETS AT ONCE
+async function submitAllBets() {
+  if (!canBet) { toast('Betting is closed!', 'info'); return; }
   if (alreadySubmitted) { toast('Bets already placed this round', 'info'); return; }
   if (pendingBets.length === 0) { toast('Add at least one bet first', 'info'); return; }
 
@@ -827,7 +812,8 @@ async function onSubmitClick() {
   setStatus('Placing bets…');
 
   const toSend = [...pendingBets];
-  let placed = 0, failed = 0;
+  let placed = 0;
+  let failed = 0;
 
   for (const bet of toSend) {
     try {
@@ -887,14 +873,14 @@ function updateSubmitBtn() {
   } else {
     const tot = pendingBets.reduce((s,b)=>s+b.amount, 0);
     btn.className = 'submit-btn ready';
-    btn.textContent = `🎲 PLACE ${pendingBets.length} BET${pendingBets.length!==1?'S':''} — $${tot.toFixed(2)}`;
+    btn.textContent = `🎲 SUBMIT ${pendingBets.length} BET${pendingBets.length!==1?'S':''} ($${tot.toFixed(2)})`;
   }
 }
 
 function renderSlip() {
   const body = document.getElementById('slipBody');
   const totEl = document.getElementById('slipTotal');
-  const all = [...submittedBets,...pendingBets];
+  const all = [...pendingBets, ...submittedBets];
   totEl.textContent = 'Total: $' + all.reduce((s,b)=>s+b.amount,0).toFixed(2);
 
   if (all.length === 0) {
@@ -903,33 +889,45 @@ function renderSlip() {
   }
 
   let html = '';
-  submittedBets.forEach((bet,i) => {
-    html += `<div class="slip-item placed" id="sbet-${i}">
-      <div style="flex:1">
-        <div class="slip-nums">${bet.numbers.join(' · ')}</div>
-        <div class="slip-result pend" id="sbet-res-${i}">⏳ awaiting draw…</div>
-      </div>
-      <div class="slip-right"><div class="slip-amount">$${bet.amount.toFixed(2)}</div></div>
-    </div>`;
-  });
-  pendingBets.forEach((bet,i) => {
-    html += `<div class="slip-item">
-      <button class="remove-btn" data-i="${i}">✕</button>
-      <div style="flex:1"><div class="slip-nums pending">${bet.numbers.join(' · ')}</div></div>
-      <div class="slip-right"><div class="slip-amount" style="color:var(--muted)">$${bet.amount.toFixed(2)}</div></div>
-    </div>`;
-  });
+  
+  // Pending bets (not yet submitted)
+  if (pendingBets.length > 0) {
+    html += `<div style="font-size:0.6rem; color:var(--muted); padding:4px 0;">PENDING (${pendingBets.length})</div>`;
+    pendingBets.forEach((bet,i) => {
+      html += `<div class="slip-item">
+        <button class="remove-btn" data-i="${i}">✕</button>
+        <div style="flex:1"><div class="slip-nums">${bet.numbers.join(' · ')}</div></div>
+        <div class="slip-right"><div class="slip-amount" style="color:var(--amber)">$${bet.amount.toFixed(2)}</div></div>
+      </div>`;
+    });
+  }
+  
+  // Submitted bets (already sent to server)
+  if (submittedBets.length > 0) {
+    html += `<div style="font-size:0.6rem; color:var(--muted); padding:4px 0; margin-top:8px;">SUBMITTED (${submittedBets.length})</div>`;
+    submittedBets.forEach((bet,i) => {
+      html += `<div class="slip-item placed" id="sbet-${i}">
+        <div style="flex:1">
+          <div class="slip-nums">${bet.numbers.join(' · ')}</div>
+          <div class="slip-result pend" id="sbet-res-${i}">⏳ awaiting draw…</div>
+        </div>
+        <div class="slip-right"><div class="slip-amount">$${bet.amount.toFixed(2)}</div></div>
+      </div>`;
+    });
+  }
+  
   body.innerHTML = html;
   body.querySelectorAll('.remove-btn').forEach(btn => {
     btn.onclick = () => {
-      pendingBets.splice(parseInt(btn.dataset.i), 1);
+      const idx = parseInt(btn.dataset.i);
+      pendingBets.splice(idx, 1);
       renderSlip(); updateStats(); updateSubmitBtn();
     };
   });
 }
 
 function updateStats() {
-  const all = [...submittedBets,...pendingBets];
+  const all = [...pendingBets, ...submittedBets];
   document.getElementById('statBets').textContent = all.length;
   document.getElementById('statTotal').textContent = '$' + all.reduce((s,b)=>s+b.amount,0).toFixed(2);
 }
@@ -942,15 +940,12 @@ function setPhaseUI(phase, timeLeft) {
   const col = PHASE_COLORS[phase] || 'var(--cyan)';
   const max = PHASE_MAX[phase] || 30;
   const pct = Math.max(0, (timeLeft/max)*100);
-  const wrap = document.getElementById('timerWrap');
   const fill = document.getElementById('timerFill');
   const badge = document.getElementById('phaseBadge');
   const digits = document.getElementById('timerDigits');
 
-  wrap.style.setProperty('--phase-color', col);
   fill.style.width = pct + '%';
   fill.style.background = col;
-  fill.style.boxShadow = `0 0 8px ${col}`;
   digits.style.color = col;
   digits.textContent = timeLeft + 's';
   badge.className = 'phase-badge phase-' + phase;
@@ -1000,13 +995,17 @@ async function showResults(gameId, drawnNumbers) {
       const norm = sortStr(bet.numbers);
       const record = round.find(r => sortStr(r.selected_numbers) === norm);
       const resEl = document.getElementById('sbet-res-' + i);
-      const itemEl = document.getElementById('sbet-' + i);
       if (record) {
         const w = parseFloat(record.win_amount) || 0;
         totalWin += w;
         if (resEl) {
-          if (w > 0) { resEl.textContent='🏆 WON +$'+w.toFixed(2); resEl.className='slip-result win'; itemEl?.classList.add('won'); }
-          else { resEl.textContent='✗ Lost $'+bet.amount.toFixed(2); resEl.className='slip-result loss'; itemEl?.classList.add('lost'); }
+          if (w > 0) {
+            resEl.textContent = `🏆 WON +$${w.toFixed(2)}`;
+            resEl.className = 'slip-result win';
+          } else {
+            resEl.textContent = `✗ Lost $${bet.amount.toFixed(2)}`;
+            resEl.className = 'slip-result loss';
+          }
         }
       }
     });
@@ -1054,14 +1053,17 @@ async function poll() {
     const r = await fetch('/keno/state');
     const state = await r.json();
     if (!state.success) return;
-    if (currentGameId && currentGameId !== state.gameId) resetRound();
+
     if (currentGameId !== state.gameId) {
+      if (currentGameId) resetRound();
       currentGameId = state.gameId;
       document.getElementById('gameIdDisplay').textContent = state.gameId;
     }
+
     setPhaseUI(state.phase, state.timeLeft);
+
     if (state.phase === 'betting') {
-      if (!alreadySubmitted) { canBet = true; setStatus('Select numbers and press PLACE BETS'); }
+      if (!alreadySubmitted) { canBet = true; setStatus('Select numbers and click SUBMIT ALL BETS'); }
       updateSubmitBtn();
     } else if (state.phase === 'drawing') {
       canBet = false;
@@ -1109,6 +1111,7 @@ window.closePanel = closePanel;
 window.quickPick = quickPick;
 window.clearSelection = clearSelection;
 window.setAmount = setAmount;
+window.submitAllBets = submitAllBets;
 </script>
 </body>
 </html>
