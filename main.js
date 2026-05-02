@@ -867,7 +867,6 @@ bot.start(async (ctx) => {
         '🐎 HORSE RACING & KENO BET BOT\n\n' +
         '━━━━━━━━━━━━━━━━━━━━\n\n' +
         '🎰 Games Available:\n' +
-        '• Horse Racing - Bet on 6 horses\n' +
         '• Keno - Pick 1-10 numbers, win up to 20,000x!\n\n' +
         '📋 Commands:\n' +
         '/register - Create new account\n' +
@@ -875,7 +874,6 @@ bot.start(async (ctx) => {
         '/balance - Check wallet balance\n' +
         '/invite - Get referral link\n' +
         '/referrals - View your referrals\n' +
-        '/keno - Play Keno\n' +
         '/help - Show this menu'
     );
 });
@@ -1008,7 +1006,7 @@ bot.on('contact', async (ctx) => {
             return ctx.reply(`Play now:`, { reply_markup: { inline_keyboard: [[{ text: '🎮 Play', web_app: { url: autoLoginUrl } }]] } });
         }
         const userReferralCode = generateReferralCode(userId, phone);
-        await pool.query('INSERT INTO users (phone, password, wallet_balance, referral_code) VALUES ($1,$2,$3,$4)', [phone, 'telegram123', 100.00, userReferralCode]);
+        await pool.query('INSERT INTO users (phone, password, wallet_balance, referral_code) VALUES ($1,$2,$3,$4)', [phone, 'telegram123', 0.00, userReferralCode]);
         await pool.query('INSERT INTO telegram_links (telegram_id, telegram_username, phone) VALUES ($1,$2,$3)', [userId, telegramUsername, phone]);
         if (session?.referral_code) {
             const referrer = await pool.query('SELECT phone FROM users WHERE referral_code = $1', [session.referral_code]);
@@ -1018,7 +1016,7 @@ bot.on('contact', async (ctx) => {
         }
         await ctx.reply('✅ Registration successful!', { reply_markup: { remove_keyboard: true } });
         const autoLoginUrl = `${BASE_URL}/select.html?phone=${encodeURIComponent(phone)}&auto=1`;
-        await ctx.reply(`Your account is ready!\n💰 Balance: $100.00\n🔗 Referral Code: ${userReferralCode}`, { reply_markup: { inline_keyboard: [[{ text: '🎮 Start Playing', web_app: { url: autoLoginUrl } }]] } });
+        await ctx.reply(`Your account is ready!please deposite at least 300$\n💰 Balance: $0.00\n🔗 Referral Code: ${userReferralCode}`, { reply_markup: { inline_keyboard: [[{ text: '🎮 Start Playing', web_app: { url: autoLoginUrl } }]] } });
         sessions.delete(ctx.from.id);
     } catch (err) {
         console.error('Contact error:', err);
