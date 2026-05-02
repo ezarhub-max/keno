@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Admin - Members & Deposits</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="/socket.io/socket.io.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -15,31 +14,44 @@
             font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
             padding: 12px;
         }
-        .navbar {
-            background: rgba(255,255,255,0.1);
+        .admin-nav {
+            background: rgba(0,0,0,0.3);
             backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 12px 16px;
-            margin-bottom: 15px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
-        .navbar-brand {
-            color: white;
-            font-weight: bold;
+        .admin-nav .nav-links {
             display: flex;
-            align-items: center;
-            gap: 8px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
-        .navbar-brand i { color: #ffc107; }
-        .back-btn {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            border-radius: 30px;
-            padding: 8px 16px;
+        .admin-nav a {
             color: white;
             text-decoration: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            transition: all 0.2s ease;
+            background: rgba(255,255,255,0.1);
+        }
+        .admin-nav a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .admin-nav a.active {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            color: #1a1a2e;
+        }
+        .logout-btn {
+            background: #dc3545 !important;
+            color: white !important;
+        }
+        .logout-btn:hover {
+            background: #c82333 !important;
         }
         .container { padding: 0; }
         
@@ -55,7 +67,6 @@
             border-radius: 20px;
             padding: 15px;
             text-align: center;
-            transition: all 0.3s ease;
         }
         .stat-number {
             font-size: 1.8rem;
@@ -65,13 +76,6 @@
         .stat-label {
             font-size: 0.7rem;
             color: rgba(255,255,255,0.7);
-        }
-        .stat-update {
-            animation: pulse 0.3s ease;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
         }
         
         .tab-nav {
@@ -89,13 +93,11 @@
             font-weight: 600;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s ease;
         }
         .tab-btn.active {
             background: linear-gradient(135deg, #ffc107, #ff9800);
             color: #1a1a2e;
         }
-        .tab-btn:active { transform: scale(0.97); }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -130,9 +132,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
         }
-        .refresh-icon:active { transform: rotate(180deg); }
         
         .deposit-item {
             background: rgba(0,0,0,0.3);
@@ -140,9 +140,7 @@
             padding: 15px;
             margin-bottom: 12px;
             border-left: 3px solid #ffc107;
-            transition: all 0.2s ease;
         }
-        .deposit-item.approving { opacity: 0.6; pointer-events: none; }
         .deposit-amount {
             font-size: 1.3rem;
             font-weight: bold;
@@ -160,7 +158,6 @@
             padding: 8px 20px;
             color: white;
             margin-right: 8px;
-            transition: all 0.2s ease;
         }
         .btn-reject {
             background: #dc3545;
@@ -168,10 +165,7 @@
             border-radius: 30px;
             padding: 8px 20px;
             color: white;
-            transition: all 0.2s ease;
         }
-        .btn-approve:active, .btn-reject:active { transform: scale(0.95); }
-        .btn-approve:disabled, .btn-reject:disabled { opacity: 0.5; cursor: not-allowed; }
         
         .member-table {
             width: 100%;
@@ -202,11 +196,6 @@
             padding: 12px;
             color: white;
         }
-        .form-control:focus {
-            background: rgba(0,0,0,0.5);
-            border-color: #ffc107;
-            outline: none;
-        }
         
         .delete-btn {
             background: #dc3545;
@@ -215,7 +204,6 @@
             padding: 5px 12px;
             color: white;
             margin-left: 5px;
-            transition: all 0.2s ease;
         }
         .add-btn {
             background: #28a745;
@@ -224,9 +212,7 @@
             padding: 5px 12px;
             color: white;
             margin-right: 5px;
-            transition: all 0.2s ease;
         }
-        .delete-btn:active, .add-btn:active { transform: scale(0.95); }
         
         .toast-notification {
             position: fixed;
@@ -240,10 +226,8 @@
             font-size: 0.85rem;
             z-index: 1000;
             animation: slideUp 0.3s ease;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         }
         .toast-notification.error { background: #dc3545; }
-        .toast-notification.warning { background: #ffc107; color: #1a1a2e; }
         
         @keyframes slideUp {
             from { transform: translate(-50%, 100px); opacity: 0; }
@@ -272,23 +256,20 @@
             .stats-grid { grid-template-columns: 1fr; }
             .btn-approve, .btn-reject { padding: 6px 12px; font-size: 0.7rem; }
             td, th { font-size: 0.65rem; padding: 6px 4px; }
-            .card-header { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <div class="navbar-brand">
-            <i class="fas fa-shield-alt"></i>
-            <span>Admin Panel</span>
+    <div class="admin-nav">
+        <div class="nav-links">
+            <a href="admin-bets.html">Games</a>
+            <a href="admin-members.html" class="active">Members</a>
+            <a href="admin-withdrawals.html">Withdrawals</a>
         </div>
-        <a href="select.html" class="back-btn">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
     <div class="container">
-        <!-- Stats Cards -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-number" id="totalMembers">0</div>
@@ -304,7 +285,6 @@
             </div>
         </div>
 
-        <!-- Tabs -->
         <div class="tab-nav">
             <div class="tab-btn active" onclick="switchTab('deposits')">
                 <i class="fas fa-dollar-sign"></i> Deposit Requests
@@ -314,28 +294,26 @@
             </div>
         </div>
 
-        <!-- Deposit Requests Tab -->
         <div id="depositsTab" class="tab-content active">
             <div class="card">
                 <div class="card-header">
                     <span><i class="fas fa-clock"></i> Pending Deposit Requests</span>
                     <div class="refresh-icon" onclick="loadPendingDeposits()">
-                        <i class="fas fa-sync-alt" style="color: white; font-size: 0.8rem;"></i>
+                        <i class="fas fa-sync-alt" style="color: white;"></i>
                     </div>
                 </div>
                 <div class="card-body" id="pendingDepositsList">
-                    <div class="empty-state">Loading pending deposits...</div>
+                    <div class="empty-state">Loading...</div>
                 </div>
             </div>
         </div>
 
-        <!-- Members Tab -->
         <div id="membersTab" class="tab-content">
             <div class="card">
                 <div class="card-header">
                     <span><i class="fas fa-users"></i> All Members</span>
                     <div class="refresh-icon" onclick="loadMembers()">
-                        <i class="fas fa-sync-alt" style="color: white; font-size: 0.8rem;"></i>
+                        <i class="fas fa-sync-alt" style="color: white;"></i>
                     </div>
                 </div>
                 <div class="card-body">
@@ -345,7 +323,7 @@
                                 <tr><th>Phone</th><th>Balance</th><th>Deposits</th><th>Referrals</th><th>Joined</th><th>Action</th></tr>
                             </thead>
                             <tbody id="membersList">
-                                <tr><td colspan="6" class="empty-state">Loading members...</td></tr>
+                                <tr><td colspan="6" class="empty-state">Loading...</td>'90
                             </tbody>
                         </table>
                     </div>
@@ -374,29 +352,34 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let currentUserPhone = null;
         let addBalanceModal = null;
         let autoRefreshInterval = null;
         
-        // Check admin auth
-        if (!localStorage.getItem('adminLoggedIn')) {
+        // ✅ Check admin authentication - using both flags for compatibility
+        if (!localStorage.getItem('adminLoggedIn') && !localStorage.getItem('adminAuth')) {
+            window.location.href = 'admin-login.html';
+        }
+        
+        function logout() {
+            localStorage.removeItem('adminLoggedIn');
+            localStorage.removeItem('adminAuth');
             window.location.href = 'admin-login.html';
         }
         
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.className = `toast-notification ${type}`;
-            toast.innerHTML = (type === 'success' ? '<i class="fas fa-check-circle"></i> ' : '<i class="fas fa-exclamation-triangle"></i> ') + message;
+            toast.innerHTML = (type === 'success' ? '✅ ' : '❌ ') + message;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
         }
         
         function updateStatNumber(elementId, newValue) {
             const element = document.getElementById(elementId);
-            element.classList.add('stat-update');
             element.textContent = newValue;
-            setTimeout(() => element.classList.remove('stat-update'), 300);
         }
         
         function switchTab(tab) {
@@ -448,19 +431,16 @@
                     `).join('');
                 }
             } catch (error) {
-                console.error('Error loading deposits:', error);
-                document.getElementById('pendingDepositsList').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i> Error loading deposits</div>';
+                console.error('Error:', error);
+                document.getElementById('pendingDepositsList').innerHTML = '<div class="empty-state">Error loading deposits</div>';
             }
         }
         
         async function approveDeposit(depositId, action, phone, amount) {
-            const depositItem = document.querySelector(`.deposit-item[data-id="${depositId}"]`);
-            const approveBtn = depositItem?.querySelector('.btn-approve');
-            const rejectBtn = depositItem?.querySelector('.btn-reject');
-            
-            if (approveBtn) approveBtn.disabled = true;
-            if (rejectBtn) rejectBtn.disabled = true;
-            if (depositItem) depositItem.classList.add('approving');
+            const approveBtn = event.target;
+            const originalText = approveBtn.innerHTML;
+            approveBtn.disabled = true;
+            approveBtn.innerHTML = '<span class="loading-spinner"></span>';
             
             try {
                 const response = await fetch('/admin/approve-deposit', {
@@ -471,27 +451,18 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    const actionText = action === 'approve' ? 'approved' : 'rejected';
-                    showToast(`Deposit ${actionText} successfully! ${action === 'approve' ? `$${amount} added to ${phone}` : ''}`);
-                    
-                    // Reload data
+                    showToast(`Deposit ${action === 'approve' ? 'approved' : 'rejected'}! ${action === 'approve' ? `+$${amount} added` : ''}`);
                     await loadPendingDeposits();
                     await loadMembers();
-                    
-                    // Update total balance stat
-                    await updateTotalBalance();
+                    updateTotalBalance();
                 } else {
                     showToast('Error: ' + (data.error || 'Operation failed'), 'error');
-                    if (approveBtn) approveBtn.disabled = false;
-                    if (rejectBtn) rejectBtn.disabled = false;
-                    if (depositItem) depositItem.classList.remove('approving');
                 }
             } catch (error) {
-                console.error('Error:', error);
                 showToast('Network error. Please try again.', 'error');
-                if (approveBtn) approveBtn.disabled = false;
-                if (rejectBtn) rejectBtn.disabled = false;
-                if (depositItem) depositItem.classList.remove('approving');
+            } finally {
+                approveBtn.disabled = false;
+                approveBtn.innerHTML = originalText;
             }
         }
         
@@ -503,7 +474,7 @@
                 updateStatNumber('totalBalance', `$${total.toFixed(2)}`);
                 updateStatNumber('totalMembers', members.length);
             } catch (error) {
-                console.error('Error updating total balance:', error);
+                console.error('Error:', error);
             }
         }
         
@@ -513,13 +484,12 @@
                 const members = await response.json();
                 
                 updateStatNumber('totalMembers', members.length);
-                
                 const total = members.reduce((sum, m) => sum + parseFloat(m.wallet_balance), 0);
                 updateStatNumber('totalBalance', `$${total.toFixed(2)}`);
                 
                 const tbody = document.getElementById('membersList');
                 if (members.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No members found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No members found</td>'90;
                     return;
                 }
                 
@@ -541,8 +511,8 @@
                     </tr>
                 `).join('');
             } catch (error) {
-                console.error('Error loading members:', error);
-                document.getElementById('membersList').innerHTML = '<tr><td colspan="6" class="empty-state">Error loading members</td></tr>';
+                console.error('Error:', error);
+                document.getElementById('membersList').innerHTML = '<tr><td colspan="6" class="empty-state">Error loading members</td>'90;
             }
         }
         
@@ -578,23 +548,14 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showToast(`Successfully added $${amount} to ${currentUserPhone}`);
+                    showToast(`Added $${amount} to ${currentUserPhone}`);
                     if (addBalanceModal) addBalanceModal.hide();
                     await loadMembers();
-                    await updateTotalBalance();
-                    
-                    // Update the balance in the table row directly
-                    const row = document.querySelector(`tr[data-phone="${currentUserPhone}"]`);
-                    if (row) {
-                        const balanceCell = row.querySelector('.balance-cell');
-                        const currentBalance = parseFloat(balanceCell.textContent.replace('$', ''));
-                        balanceCell.textContent = `$${(currentBalance + amount).toFixed(2)}`;
-                    }
+                    updateTotalBalance();
                 } else {
                     showToast('Error: ' + (data.error || 'Operation failed'), 'error');
                 }
             } catch (error) {
-                console.error('Error:', error);
                 showToast('Network error. Please try again.', 'error');
             } finally {
                 submitBtn.disabled = false;
@@ -603,9 +564,7 @@
         }
         
         async function deleteMember(phone) {
-            if (!confirm(`⚠️ Are you sure you want to delete member ${phone}?\n\nThis will permanently remove the user and all their data!\n\nThis action CANNOT be undone!`)) {
-                return;
-            }
+            if (!confirm(`⚠️ Delete member ${phone}? This cannot be undone!`)) return;
             
             const deleteBtn = event.target;
             const originalText = deleteBtn.innerHTML;
@@ -621,14 +580,13 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showToast(`Member ${phone} deleted successfully`);
+                    showToast(`Member ${phone} deleted`);
                     await loadMembers();
-                    await updateTotalBalance();
+                    updateTotalBalance();
                 } else {
                     showToast('Error: ' + (data.error || 'Delete failed'), 'error');
                 }
             } catch (error) {
-                console.error('Error:', error);
                 showToast('Network error. Please try again.', 'error');
             } finally {
                 deleteBtn.disabled = false;
@@ -652,11 +610,9 @@
         updateTotalBalance();
         startAutoRefresh();
         
-        // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (autoRefreshInterval) clearInterval(autoRefreshInterval);
         });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
