@@ -293,62 +293,6 @@
             font-size: 0.7rem;
         }
         
-        .requirement-card {
-            background: rgba(255,255,255,0.08);
-            border-radius: 20px;
-            padding: 16px;
-            margin-bottom: 16px;
-        }
-        
-        .requirement-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 14px;
-            margin-bottom: 10px;
-        }
-        
-        .requirement-item.met {
-            background: rgba(40,167,69,0.2);
-            border-left: 3px solid #28a745;
-        }
-        
-        .requirement-item.not-met {
-            background: rgba(220,53,69,0.1);
-            border-left: 3px solid #dc3545;
-        }
-        
-        .progress {
-            height: 4px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 2px;
-            margin-top: 6px;
-        }
-        
-        .progress-bar {
-            border-radius: 2px;
-        }
-        
-        .alert {
-            border-radius: 16px;
-            padding: 12px 16px;
-            font-size: 0.8rem;
-            margin-top: 12px;
-        }
-        
-        .alert-success {
-            background: rgba(40,167,69,0.2);
-            border: 1px solid rgba(40,167,69,0.3);
-            color: #28a745;
-        }
-        
-        .alert-warning {
-            background: rgba(255,193,7,0.2);
-            border: 1px solid rgba(255,193,7,0.3);
-            color: #ffc107;
-        }
-        
         .toast-notification {
             position: fixed;
             bottom: 20px;
@@ -362,6 +306,10 @@
             z-index: 1000;
             animation: slideUp 0.3s ease;
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        .toast-notification.error {
+            background: #dc3545;
         }
         
         @keyframes slideUp {
@@ -481,38 +429,15 @@
             </div>
         </div>
 
-        <!-- Withdraw Tab -->
+        <!-- Withdraw Tab - SIMPLIFIED, NO REQUIREMENTS -->
         <div id="withdrawTab" class="tab-content">
-            <div class="requirement-card">
-                <h6><i class="fas fa-check-circle"></i> Withdrawal Requirements</h6>
-                <div id="referralReq" class="requirement-item not-met">
-                    <div class="requirement-icon">⭕</div>
-                    <div class="requirement-content">
-                        <div class="d-flex justify-content-between">
-                            <span class="requirement-title">Referrals (Need 10)</span>
-                            <span id="referralStatus">0/10</span>
-                        </div>
-                        <div class="progress"><div class="progress-bar bg-success" id="referralBar" style="width: 0%"></div></div>
-                    </div>
-                </div>
-                
-                <div id="timeReq" class="requirement-item not-met">
-                    <div class="requirement-icon">⏳</div>
-                    <div class="requirement-content">
-                        <div class="d-flex justify-content-between">
-                            <span class="requirement-title">24 Hours After Registration</span>
-                            <span id="timeStatus">0h/24h</span>
-                        </div>
-                        <div class="progress"><div class="progress-bar bg-info" id="timeBar" style="width: 0%"></div></div>
-                    </div>
-                </div>
-                
-                <div class="alert alert-warning" id="requirementMsg">⏳ Complete ONE requirement to withdraw</div>
-            </div>
-
             <div class="card">
                 <div class="card-body">
                     <div class="card-title"><i class="fas fa-money-bill-wave"></i> Request Withdrawal</div>
+                    
+                    <div class="alert alert-info mb-3" style="background: rgba(23,162,184,0.2); border: 1px solid rgba(23,162,184,0.3); color: #17a2b8;">
+                        <i class="fas fa-info-circle"></i> Withdrawals are processed within 48 hours. Your balance will be deducted immediately.
+                    </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Amount ($)</label>
@@ -531,9 +456,19 @@
                         <input type="tel" class="form-control" id="withdrawTelebirr" placeholder="09XX XXX XXX">
                     </div>
                     
-                    <button class="btn-warning" id="withdrawBtn" onclick="requestWithdrawal()" disabled>
+                    <button class="btn-warning" onclick="requestWithdrawal()">
                         <i class="fas fa-arrow-up"></i> Request Withdrawal
                     </button>
+                </div>
+            </div>
+            
+            <!-- Withdrawal History -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="card-title"><i class="fas fa-history"></i> Withdrawal History</div>
+                    <div id="withdrawalHistory" style="max-height: 250px; overflow-y: auto;">
+                        <div class="text-center text-muted" style="color: rgba(255,255,255,0.5);">Loading...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -545,7 +480,6 @@
         
         const userPhone = localStorage.getItem('userPhone');
         let balance = parseFloat(localStorage.getItem('userBalance')) || 0;
-        let userCreatedAt = null;
         
         if (!userPhone) window.location.href = 'login.html';
         
@@ -563,10 +497,10 @@
             }
         });
         
-        function showToast(message) {
+        function showToast(message, isError = false) {
             const toast = document.createElement('div');
-            toast.className = 'toast-notification';
-            toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+            toast.className = 'toast-notification' + (isError ? ' error' : '');
+            toast.innerHTML = '<i class="fas fa-' + (isError ? 'exclamation-triangle' : 'check-circle') + '"></i> ' + message;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
         }
@@ -602,7 +536,7 @@
             } else {
                 document.querySelector('.tab-btn:last-child').classList.add('active');
                 document.getElementById('withdrawTab').classList.add('active');
-                loadWithdrawalEligibility();
+                loadWithdrawalHistory();
             }
         }
         
@@ -611,12 +545,12 @@
             const transactionId = document.getElementById('transactionId').value.trim();
             
             if (!amount || amount < 10) {
-                alert('Please enter a valid amount (minimum $10)');
+                showToast('Please enter a valid amount (minimum $10)', true);
                 return;
             }
             
             if (!transactionId) {
-                alert('Please enter your Transaction ID');
+                showToast('Please enter your Transaction ID', true);
                 return;
             }
             
@@ -641,10 +575,10 @@
                     loadPendingRequests();
                     loadDepositHistory();
                 } else {
-                    alert('❌ Error: ' + (data.error || 'Deposit request failed'));
+                    showToast('❌ Error: ' + (data.error || 'Deposit request failed'), true);
                 }
             } catch (error) {
-                alert('❌ Network error. Please try again.');
+                showToast('❌ Network error. Please try again.', true);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
@@ -656,17 +590,17 @@
             const telebirr = document.getElementById('withdrawTelebirr').value.trim();
             
             if (!amount || amount < 10) {
-                alert('Minimum withdrawal amount is $10');
+                showToast('Minimum withdrawal amount is $10', true);
                 return;
             }
             
             if (amount > balance) {
-                alert('Insufficient balance');
+                showToast('Insufficient balance', true);
                 return;
             }
             
             if (!telebirr || telebirr.length < 9) {
-                alert('Please enter a valid Telebirr number');
+                showToast('Please enter a valid Telebirr number', true);
                 return;
             }
             
@@ -694,11 +628,12 @@
                     showToast(`✅ Withdrawal request submitted! $${amount}`);
                     document.getElementById('withdrawAmount').value = '';
                     document.getElementById('withdrawTelebirr').value = '';
+                    loadWithdrawalHistory();
                 } else {
-                    alert('❌ Error: ' + (data.error || 'Withdrawal failed'));
+                    showToast('❌ Error: ' + (data.error || 'Withdrawal failed'), true);
                 }
             } catch (error) {
-                alert('❌ Network error. Please try again.');
+                showToast('❌ Network error. Please try again.', true);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
@@ -726,23 +661,9 @@
                 if (data.success) {
                     document.getElementById('referralCount').textContent = data.total_referrals || 0;
                     document.getElementById('referralBonus').textContent = `$${(data.total_bonus || 0).toFixed(2)}`;
-                    updateReferralRequirement(data.total_referrals || 0);
                 }
             } catch (error) {
                 console.error('Referral error:', error);
-            }
-        }
-        
-        async function loadUserInfo() {
-            try {
-                const response = await fetch(`/user/info/${userPhone}`);
-                const data = await response.json();
-                if (data.success && data.created_at) {
-                    userCreatedAt = new Date(data.created_at);
-                    updateTimeRequirement();
-                }
-            } catch (error) {
-                console.error('User info error:', error);
             }
         }
         
@@ -796,76 +717,38 @@
             }
         }
         
-        function updateReferralRequirement(count) {
-            const target = 10;
-            const progress = Math.min((count / target) * 100, 100);
-            const met = count >= target;
-            
-            document.getElementById('referralStatus').textContent = `${count}/${target}`;
-            document.getElementById('referralBar').style.width = `${progress}%`;
-            
-            const reqDiv = document.getElementById('referralReq');
-            if (met) {
-                reqDiv.className = 'requirement-item met';
-                reqDiv.querySelector('.requirement-icon').textContent = '✅';
-            } else {
-                reqDiv.className = 'requirement-item not-met';
-                reqDiv.querySelector('.requirement-icon').textContent = '⭕';
+        async function loadWithdrawalHistory() {
+            try {
+                const response = await fetch(`/withdrawal/history/${userPhone}`);
+                const history = await response.json();
+                const container = document.getElementById('withdrawalHistory');
+                
+                if (!history || history.length === 0) {
+                    container.innerHTML = '<div class="text-center" style="color: rgba(255,255,255,0.5);">No withdrawal history</div>';
+                    return;
+                }
+                
+                container.innerHTML = history.map(w => `
+                    <div class="request-item" style="border-left-color: ${w.status === 'approved' ? '#28a745' : '#ffc107'}">
+                        <div class="d-flex justify-content-between">
+                            <span>💰 $${parseFloat(w.amount).toFixed(2)}</span>
+                            <span class="${w.status === 'approved' ? 'status-approved' : 'status-pending'}">${w.status === 'approved' ? '✅ Approved' : '⏳ Pending'}</span>
+                        </div>
+                        <div style="font-size:0.7rem;">📱 ${w.account || w.telebirr || 'N/A'} | ${new Date(w.created_at).toLocaleDateString()}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Withdrawal history error:', error);
             }
-            checkEligibility();
-        }
-        
-        function updateTimeRequirement() {
-            if (!userCreatedAt) return;
-            
-            const hoursPassed = (Date.now() - userCreatedAt) / (1000 * 60 * 60);
-            const target = 24;
-            const progress = Math.min((hoursPassed / target) * 100, 100);
-            const met = hoursPassed >= target;
-            
-            document.getElementById('timeStatus').textContent = `${Math.floor(hoursPassed)}h/${target}h`;
-            document.getElementById('timeBar').style.width = `${progress}%`;
-            
-            const reqDiv = document.getElementById('timeReq');
-            if (met) {
-                reqDiv.className = 'requirement-item met';
-                reqDiv.querySelector('.requirement-icon').textContent = '✅';
-            } else {
-                reqDiv.className = 'requirement-item not-met';
-                reqDiv.querySelector('.requirement-icon').textContent = '⏳';
-            }
-            checkEligibility();
-        }
-        
-        function checkEligibility() {
-            const referralMet = document.getElementById('referralStatus').textContent.startsWith('10/');
-            const timeMet = document.getElementById('timeStatus').textContent === '24h/24h';
-            const withdrawBtn = document.getElementById('withdrawBtn');
-            const msgDiv = document.getElementById('requirementMsg');
-            
-            if (referralMet || timeMet) {
-                withdrawBtn.disabled = false;
-                msgDiv.className = 'alert alert-success';
-                msgDiv.innerHTML = '✅ You are eligible to withdraw!';
-            } else {
-                withdrawBtn.disabled = true;
-                msgDiv.className = 'alert alert-warning';
-                msgDiv.innerHTML = '⏳ Complete ONE requirement to withdraw';
-            }
-        }
-        
-        function loadWithdrawalEligibility() {
-            loadReferralInfo();
-            loadUserInfo();
         }
         
         async function refreshAll() {
             await Promise.all([
                 loadBalance(),
                 loadReferralInfo(),
-                loadUserInfo(),
                 loadDepositHistory(),
-                loadPendingRequests()
+                loadPendingRequests(),
+                loadWithdrawalHistory()
             ]);
         }
         
@@ -873,16 +756,16 @@
         updateBalanceDisplay();
         loadBalance();
         loadReferralInfo();
-        loadUserInfo();
         loadDepositHistory();
         loadPendingRequests();
+        loadWithdrawalHistory();
         
         // Auto-refresh every 10 seconds
         setInterval(() => {
             loadBalance();
             loadPendingRequests();
             if (document.getElementById('withdrawTab').classList.contains('active')) {
-                loadWithdrawalEligibility();
+                loadWithdrawalHistory();
             }
         }, 10000);
     </script>
