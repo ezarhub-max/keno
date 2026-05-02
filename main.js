@@ -560,11 +560,9 @@ let kenoRoundStartTime = null;
 let kenoRoundTimer = null;
 let kenoRoundBets = [];
 let kenoRoundPhase = 'betting';
-
-const KENO_BETTING_DURATION = 30000;
-const KENO_DRAWING_DURATION = 30000;
-const KENO_RESULTS_DURATION = 5000;
-
+const KENO_BETTING_DURATION = 45000;   // 45 seconds
+const KENO_DRAWING_DURATION = 15000;   // 15 seconds
+const KENO_RESULTS_DURATION = 5000;    // 5 seconds (no change)
 const KENO_PAYOUTS = {
     1: {1: 2.5},
     2: {2: 12, 1: 1.5},

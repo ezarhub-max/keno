@@ -949,7 +949,7 @@ function updateStats() {
 
 const PHASE_COLORS = { betting:'var(--cyan)', drawing:'var(--amber)', results:'var(--green)' };
 const PHASE_LABELS = { betting:'BETTING', drawing:'DRAWING', results:'RESULTS' };
-const PHASE_MAX = { betting:30, drawing:30, results:5 };
+const PHASE_MAX = { betting: 45, drawing: 15, results: 5 };
 
 function setPhaseUI(phase, timeLeft) {
   const col = PHASE_COLORS[phase] || 'var(--cyan)';
