@@ -553,7 +553,7 @@ app.post('/withdraw', async (req, res) => {
 // ============================================
 
 let currentKenoGameId = null;
-let currentKenoGameNumber = 123213;
+let currentKenoGameNumber = 523213;
 let currentKenoDrawnNumbers = null;
 let kenoRoundActive = false;
 let kenoRoundStartTime = null;
@@ -899,7 +899,7 @@ bot.command('invite', async (ctx) => {
     try {
         const registered = await isUserRegistered(ctx.from.id);
         if (!registered.registered) return ctx.reply('❌ Register first with /register');
-        const botUsername = ctx.botInfo ? ctx.botInfo.username : 'ALPHA_ALLGAME_BOT';
+        const botUsername = ctx.botInfo ? ctx.botInfo.username : 'HABESHA_ALLGAME_BOT';
         const userData = await pool.query('SELECT referral_code FROM users WHERE phone = $1', [registered.phone]);
         const referralCode = userData.rows[0].referral_code;
         const inviteLink = `https://t.me/${botUsername}?start=${referralCode}`;
@@ -1016,7 +1016,7 @@ bot.on('contact', async (ctx) => {
         }
         await ctx.reply('✅ Registration successful!', { reply_markup: { remove_keyboard: true } });
         const autoLoginUrl = `${BASE_URL}/select.html?phone=${encodeURIComponent(phone)}&auto=1`;
-        await ctx.reply(`Your account is ready!please deposite at least 300$\n💰 Balance: $0.00\n🔗 Referral Code: ${userReferralCode}`, { reply_markup: { inline_keyboard: [[{ text: '🎮 Start Playing', web_app: { url: autoLoginUrl } }]] } });
+        await ctx.reply(`Your account is ready!please deposite at least 200$\n💰 Balance: $0.00\n🔗 Referral Code: ${userReferralCode}`, { reply_markup: { inline_keyboard: [[{ text: '🎮 Start Playing', web_app: { url: autoLoginUrl } }]] } });
         sessions.delete(ctx.from.id);
     } catch (err) {
         console.error('Contact error:', err);

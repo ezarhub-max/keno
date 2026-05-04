@@ -93,19 +93,27 @@ body::before {
   100% { color: var(--green); transform: scale(1); }
 }
 
+/* ========== CHANGED: WALLET BUTTON WITH OVERLAY TEXT ========== */
 .icon-btn {
-  width: 36px; height: 36px;
+  width: auto;
+  height: 36px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface2);
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   cursor: pointer;
-  display: flex; align-items:center; justify-content:center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.15s;
   text-decoration: none;
+  padding: 0 12px;
+  gap: 6px;
 }
 .icon-btn:hover, .icon-btn:active { border-color: var(--cyan); color: var(--cyan); }
+.icon-btn i { font-size: 0.9rem; }
+/* ========== END OF CHANGE ========== */
 
 .game-meta {
   display: grid;
@@ -544,6 +552,8 @@ body::before {
   .num-btn { font-size:0.64rem; border-radius:6px; }
   .timer-digits { font-size:2rem; }
   .quick-btn { font-size:0.55rem; padding:3px 6px; }
+  .icon-btn { padding: 0 8px; font-size: 0.7rem; }
+  .icon-btn i { font-size: 0.8rem; }
 }
 </style>
 </head>
@@ -553,7 +563,10 @@ body::before {
   <div class="header">
     <div class="logo">KE<span>NO</span></div>
     <div class="header-right">
-      <a href="wallet.html" class="icon-btn" title="Wallet">💳</a>
+      <!-- CHANGED: Wallet button with overlay text -->
+      <a href="wallet.html" class="icon-btn">
+        <i class="fas fa-wallet"></i> WALLET
+      </a>
       <div class="balance-chip" onclick="refreshBalance()" title="Tap to refresh balance">
         <span class="balance-label">Balance</span>
         <span class="balance-value" id="balanceDisplay">$0.00</span>

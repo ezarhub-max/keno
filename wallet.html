@@ -442,8 +442,8 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Amount ($)</label>
-                        <input type="number" class="form-control" id="depositAmount" placeholder="Enter amount (min $300)" min="10" step="10" value="">
-                        <small class="text-muted" style="font-size: 0.7rem; color: rgba(255,255,255,0.5);">Minimum deposit: $300</small>
+                        <input type="number" class="form-control" id="depositAmount" placeholder="Enter amount (min $200)" min="10" step="10" value="">
+                        <small class="text-muted" style="font-size: 0.7rem; color: rgba(255,255,255,0.5);">Minimum deposit: $200</small>
                     </div>
                     
                     <div class="amount-buttons">
@@ -611,7 +611,7 @@
             const amount = parseFloat(document.getElementById('depositAmount').value);
             const transactionId = document.getElementById('transactionId').value.trim();
             
-            if (!amount || amount < 10) {
+            if (!amount || amount < 200) {
                 showToast('Please enter a valid amount (minimum $10)', true);
                 return;
             }
