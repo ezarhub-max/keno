@@ -1271,20 +1271,19 @@ if (process.env.NODE_ENV !== 'production') {
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
-// TEMPORARY ROUTE - DELETE THIS AFTER USE!
-app.post('/admin/reset-all-users', async (req, res) => {
-    // Add a secret key for safety
-    const { secret } = req.body;
-    if (secret !== 'DELETE_ALL_USERS_CONFIRM') {
-        return res.status(401).json({ error: 'Invalid secret' });
-    }
-    
+// ============================================
+// TEMPORARY: DELETE ALL USERS (REMOVE AFTER USE)
+// ============================================
+
+app.post('/admin/delete-all-users', async (req, res) => {
     const client = await pool.connect();
     
     try {
         await client.query('BEGIN');
         
-        // Delete in correct order
+        console.log(`${colors.red}🗑️ DELETING ALL USERS AND RELATED DATA...${colors.reset}`);
+        
+        // Delete in correct order to avoid foreign key violations
         await client.query('DELETE FROM bets');
         await client.query('DELETE FROM deposits');
         await client.query('DELETE FROM withdrawals');
@@ -1302,17 +1301,29 @@ app.post('/admin/reset-all-users', async (req, res) => {
         
         await client.query('COMMIT');
         
-        console.log('🗑️ ALL USERS DELETED by admin');
-        res.json({ success: true, message: 'All users deleted successfully' });
+        console.log(`${colors.green}✅ ALL USERS DELETED SUCCESSFULLY!${colors.reset}`);
+        res.json({ success: true, message: 'All users and related data deleted' });
         
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Reset error:', error);
+        console.error(`${colors.red}❌ Delete failed:${colors.reset}`, error.message);
         res.status(500).json({ error: error.message });
     } finally {
         client.release();
     }
 });
+
+// Auto-execute when server starts - UNCOMMENT THE LINE BELOW TO RUN AUTOMATICALLY
+// (async () => {
+//     try {
+//         const response = await fetch(`http://localhost:${PORT}/admin/delete-all-users`, {
+//             method: 'POST'
+//         });
+//         console.log(`${colors.green}✅ Auto-delete completed${colors.reset}`);
+//     } catch (err) {
+//         console.log(`${colors.red}❌ Auto-delete failed:${colors.reset}`, err.message);
+//     }
+// })();
 
 
 
