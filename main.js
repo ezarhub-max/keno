@@ -1271,62 +1271,36 @@ if (process.env.NODE_ENV !== 'production') {
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
-// ============================================
-// TEMPORARY: DELETE ALL USERS (REMOVE AFTER USE)
-// ============================================
 
-app.post('/admin/delete-all-users', async (req, res) => {
+
+
+// DELETE ALL USERS ON SERVER START
+(async () => {
     const client = await pool.connect();
-    
     try {
         await client.query('BEGIN');
-        
-        console.log(`${colors.red}🗑️ DELETING ALL USERS AND RELATED DATA...${colors.reset}`);
-        
-        // Delete in correct order to avoid foreign key violations
         await client.query('DELETE FROM bets');
         await client.query('DELETE FROM deposits');
         await client.query('DELETE FROM withdrawals');
         await client.query('DELETE FROM referrals');
         await client.query('DELETE FROM telegram_links');
         await client.query('DELETE FROM users');
-        
-        // Reset sequences
         await client.query('ALTER SEQUENCE users_id_seq RESTART WITH 1');
         await client.query('ALTER SEQUENCE bets_id_seq RESTART WITH 1');
         await client.query('ALTER SEQUENCE deposits_id_seq RESTART WITH 1');
         await client.query('ALTER SEQUENCE withdrawals_id_seq RESTART WITH 1');
         await client.query('ALTER SEQUENCE referrals_id_seq RESTART WITH 1');
         await client.query('ALTER SEQUENCE telegram_links_id_seq RESTART WITH 1');
-        
         await client.query('COMMIT');
-        
-        console.log(`${colors.green}✅ ALL USERS DELETED SUCCESSFULLY!${colors.reset}`);
-        res.json({ success: true, message: 'All users and related data deleted' });
-        
+        console.log(`${colors.green}✅ ALL USERS DELETED${colors.reset}`);
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error(`${colors.red}❌ Delete failed:${colors.reset}`, error.message);
-        res.status(500).json({ error: error.message });
+        console.log(`${colors.red}❌ DELETE FAILED:${colors.reset}`, error.message);
     } finally {
         client.release();
+        process.exit(0);
     }
-});
-
-// Auto-execute when server starts - UNCOMMENT THE LINE BELOW TO RUN AUTOMATICALLY
-// (async () => {
-//     try {
-//         const response = await fetch(`http://localhost:${PORT}/admin/delete-all-users`, {
-//             method: 'POST'
-//         });
-//         console.log(`${colors.green}✅ Auto-delete completed${colors.reset}`);
-//     } catch (err) {
-//         console.log(`${colors.red}❌ Auto-delete failed:${colors.reset}`, err.message);
-//     }
-// })();
-
-
-
+})();
 // ============================================
 // START SERVER
 // ============================================
