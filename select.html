@@ -93,7 +93,6 @@ body::before {
   100% { color: var(--green); transform: scale(1); }
 }
 
-/* ========== CHANGED: WALLET BUTTON WITH OVERLAY TEXT ========== */
 .icon-btn {
   width: auto;
   height: 36px;
@@ -113,7 +112,27 @@ body::before {
 }
 .icon-btn:hover, .icon-btn:active { border-color: var(--cyan); color: var(--cyan); }
 .icon-btn i { font-size: 0.9rem; }
-/* ========== END OF CHANGE ========== */
+
+/* Withdrawal status badge */
+.withdrawal-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.withdrawal-status.pending {
+  background: rgba(255,179,0,0.2);
+  color: var(--amber);
+}
+.withdrawal-status.approved {
+  background: rgba(0,230,118,0.2);
+  color: var(--green);
+}
+.withdrawal-status.rejected {
+  background: rgba(255,23,68,0.2);
+  color: var(--red);
+}
 
 .game-meta {
   display: grid;
@@ -185,7 +204,7 @@ body::before {
   min-height: 1.2em;
 }
 
-.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
 .stat-pill {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -554,6 +573,8 @@ body::before {
   .quick-btn { font-size:0.55rem; padding:3px 6px; }
   .icon-btn { padding: 0 8px; font-size: 0.7rem; }
   .icon-btn i { font-size: 0.8rem; }
+  .stats-row { grid-template-columns: repeat(4,1fr); gap: 4px; }
+  .stat-num { font-size: 0.85rem; }
 }
 </style>
 </head>
@@ -563,7 +584,6 @@ body::before {
   <div class="header">
     <div class="logo">KE<span>NO</span></div>
     <div class="header-right">
-      <!-- CHANGED: Wallet button with overlay text -->
       <a href="wallet.html" class="icon-btn">
         <i class="fas fa-wallet"></i> WALLET
       </a>
@@ -601,6 +621,7 @@ body::before {
     <div class="stat-pill"><div class="stat-num" id="statSelected">0</div><div class="stat-lbl">Selected</div></div>
     <div class="stat-pill"><div class="stat-num" id="statBets">0</div><div class="stat-lbl">Bets</div></div>
     <div class="stat-pill"><div class="stat-num" id="statTotal">$0</div><div class="stat-lbl">Staked</div></div>
+    <div class="stat-pill"><div class="stat-num" id="referralCount">0</div><div class="stat-lbl">Referrals</div></div>
   </div>
 
   <div class="grid-wrap">
@@ -661,6 +682,12 @@ body::before {
 </div>
 
 <script>
+// Font Awesome for icons
+const faLink = document.createElement('link');
+faLink.rel = 'stylesheet';
+faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+document.head.appendChild(faLink);
+
 const socket = io({
   reconnection: true,
   reconnectionAttempts: 5,
@@ -687,6 +714,8 @@ let resultsShown = false;
 let isAnimating = false;
 let pollTimer = null;
 let isPolling = false;
+let referralCount = 0;
+let withdrawalEnabled = false;
 
 // SOCKET
 socket.emit('register-user', userPhone);
@@ -735,6 +764,51 @@ async function loadBalance() {
     }
   } catch(e) {
     console.error('Balance load error:', e);
+  }
+}
+
+async function loadReferralInfo() {
+  try {
+    const r = await fetch(`/user/referrals/${userPhone}`);
+    const data = await r.json();
+    if (data.success) {
+      referralCount = data.total_referrals || 0;
+      document.getElementById('referralCount').textContent = referralCount;
+      
+      // Withdrawal enabled after 3 referrals
+      withdrawalEnabled = referralCount >= 3;
+      
+      if (!withdrawalEnabled) {
+        setStatus(`⚠️ Need ${3 - referralCount} more referral${(3 - referralCount) !== 1 ? 's' : ''} to enable withdrawals`);
+      } else {
+        setStatus('✅ Withdrawals enabled! You have 3+ referrals');
+      }
+    }
+  } catch(e) {
+    console.error('Referral load error:', e);
+  }
+}
+
+async function loadWithdrawalHistory() {
+  try {
+    const r = await fetch(`/withdrawal/history/${userPhone}`);
+    if (!r.ok) return;
+    const history = await r.json();
+    // Store in localStorage for wallet page
+    localStorage.setItem('withdrawalHistory', JSON.stringify(history));
+  } catch(e) {
+    console.error('Withdrawal history error:', e);
+  }
+}
+
+async function loadDepositHistory() {
+  try {
+    const r = await fetch(`/deposit/history/${userPhone}`);
+    if (!r.ok) return;
+    const history = await r.json();
+    localStorage.setItem('depositHistory', JSON.stringify(history));
+  } catch(e) {
+    console.error('Deposit history error:', e);
   }
 }
 
@@ -830,7 +904,6 @@ document.getElementById('clearBetsBtn').onclick = () => {
   updateSubmitBtn();
 };
 
-// ============ FIXED: SUBMIT FUNCTION - DOES NOT LOCK USER ============
 async function submitAllBets() {
   if (!canBet) { toast('Betting is closed!', 'info'); return; }
   if (pendingBets.length === 0 && submittedBets.length > 0) {
@@ -864,7 +937,6 @@ async function submitAllBets() {
         renderBalance(true);
         placed++;
         
-        // Remove from pending
         const index = pendingBets.indexOf(bet);
         if (index !== -1) pendingBets.splice(index, 1);
       } else {
@@ -1055,6 +1127,8 @@ async function showResults(gameId, drawnNumbers) {
     document.getElementById('resultsPanel').classList.add('open');
     setTimeout(closePanel, 8000);
     await loadBalance();
+    await loadWithdrawalHistory();
+    await loadDepositHistory();
   } catch(e) { console.error('showResults:', e); }
 }
 
@@ -1142,12 +1216,20 @@ function toast(msg, type='info') {
 buildGrid();
 renderBalance();
 loadBalance();
+loadReferralInfo();
+loadWithdrawalHistory();
+loadDepositHistory();
 renderSlip();
 updateStats();
 updateSubmitBtn();
 
 pollTimer = setInterval(poll, 1000);
-setInterval(loadBalance, 10000);
+setInterval(() => {
+  loadBalance();
+  loadReferralInfo();
+  loadWithdrawalHistory();
+  loadDepositHistory();
+}, 10000);
 
 window.addEventListener('beforeunload', () => {
   if (pollTimer) clearInterval(pollTimer);
