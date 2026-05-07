@@ -445,7 +445,7 @@ app.post('/admin/delete-member', async (req, res) => {
 
 app.post('/deposit/request', async (req, res) => {
     const { phone, amount, transactionId } = req.body;
-    if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
+    if (!amount || amount <= 499) return res.status(400).json({ error: 'Invalid amount' });
     if (!transactionId) return res.status(400).json({ error: 'Transaction ID required' });
     try {
         const user = await pool.query('SELECT id FROM users WHERE phone = $1', [phone]);
@@ -1272,7 +1272,129 @@ process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
 
+// ============================================
+// DELETE ALL USERS - COMPLETE RESET
+// ============================================
 
+// Delete ALL users and all related data (fresh start)
+app.delete('/admin/delete-all-users', async (req, res) => {
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+        
+        // Get all users before deletion for socket cleanup
+        const allUsers = await client.query('SELECT phone FROM users');
+        
+        // Disconnect all active sockets
+        for (const user of allUsers.rows) {
+            if (userSockets.has(user.phone)) {
+                const socketId = userSockets.get(user.phone);
+                const socket = io.sockets.sockets.get(socketId);
+                if (socket) {
+                    socket.emit('account-deleted', { message: 'System reset. All accounts deleted.' });
+                    socket.disconnect(true);
+                }
+                userSockets.delete(user.phone);
+            }
+        }
+        
+        // Clear all tables in correct order (foreign key constraints)
+        await client.query('DELETE FROM telegram_links');
+        await client.query('DELETE FROM deposits');
+        await client.query('DELETE FROM withdrawals');
+        await client.query('DELETE FROM bets');
+        await client.query('DELETE FROM referrals');
+        await client.query('DELETE FROM users');
+        
+        // Reset sequences to start from 1 again
+        await client.query('ALTER SEQUENCE users_id_seq RESTART WITH 1');
+        await client.query('ALTER SEQUENCE bets_id_seq RESTART WITH 1');
+        await client.query('ALTER SEQUENCE deposits_id_seq RESTART WITH 1');
+        await client.query('ALTER SEQUENCE withdrawals_id_seq RESTART WITH 1');
+        await client.query('ALTER SEQUENCE referrals_id_seq RESTART WITH 1');
+        await client.query('ALTER SEQUENCE telegram_links_id_seq RESTART WITH 1');
+        
+        await client.query('COMMIT');
+        
+        console.log(`${colors.red}🗑️ ALL USERS DELETED! Fresh start completed.${colors.reset}`);
+        console.log(`${colors.yellow}📊 Total users removed: ${allUsers.rows.length}${colors.reset}`);
+        
+        res.json({ 
+            success: true, 
+            message: 'All users deleted successfully. Fresh start!',
+            usersDeleted: allUsers.rows.length 
+        });
+        
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error(`${colors.red}Delete all users error:${colors.reset}`, error.message);
+        res.status(500).json({ success: false, error: error.message });
+    } finally {
+        client.release();
+    }
+});
+
+// Delete single user by phone
+app.delete('/admin/delete-user/:phone', async (req, res) => {
+    const { phone } = req.params;
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+        
+        const userCheck = await client.query('SELECT id, phone FROM users WHERE phone = $1', [phone]);
+        if (userCheck.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+        
+        const userId = userCheck.rows[0].id;
+        const userPhone = userCheck.rows[0].phone;
+        
+        // Delete related data
+        await client.query('DELETE FROM telegram_links WHERE phone = $1', [userPhone]);
+        await client.query('DELETE FROM deposits WHERE user_id = $1', [userId]);
+        await client.query('DELETE FROM withdrawals WHERE user_id = $1', [userId]);
+        await client.query('DELETE FROM bets WHERE user_id = $1', [userId]);
+        await client.query('DELETE FROM referrals WHERE referrer_phone = $1', [userPhone]);
+        await client.query('DELETE FROM referrals WHERE referred_phone = $1', [userPhone]);
+        await client.query('DELETE FROM users WHERE id = $1', [userId]);
+        
+        // Disconnect socket if active
+        if (userSockets.has(userPhone)) {
+            const socketId = userSockets.get(userPhone);
+            const socket = io.sockets.sockets.get(socketId);
+            if (socket) {
+                socket.emit('account-deleted', { message: 'Your account has been deleted' });
+                socket.disconnect(true);
+            }
+            userSockets.delete(userPhone);
+        }
+        
+        await client.query('COMMIT');
+        
+        console.log(`${colors.red}🗑️ User deleted: ${userPhone}${colors.reset}`);
+        res.json({ success: true, message: `User ${userPhone} deleted successfully` });
+        
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error(`${colors.red}Delete user error:${colors.reset}`, error.message);
+        res.status(500).json({ success: false, error: error.message });
+    } finally {
+        client.release();
+    }
+});
+
+// Get all users count
+app.get('/admin/users-count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) as total FROM users');
+        res.json({ success: true, count: parseInt(result.rows[0].total) });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
 
 // ============================================
