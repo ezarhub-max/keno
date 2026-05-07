@@ -1239,7 +1239,7 @@ bot.on('contact', async (ctx) => {
         }
         await ctx.reply('✅ Registration successful!', { reply_markup: { remove_keyboard: true } });
         const autoLoginUrl = `${BASE_URL}/select.html?phone=${encodeURIComponent(phone)}&auto=1`;
-        await ctx.reply(`Your account is ready!please deposite at least 200$\n💰 Balance: $0.00\n🔗 Referral Code: ${userReferralCode}`, { reply_markup: { inline_keyboard: [[{ text: '🎮 Start Playing', web_app: { url: autoLoginUrl } }]] } });
+        await ctx.reply(`Your account is ready!please deposite at least 500$\n💰 Balance: $0.00\n🔗 Referral Code: ${userReferralCode}`, { reply_markup: { inline_keyboard: [[{ text: '🎮 Start Playing', web_app: { url: autoLoginUrl } }]] } });
         sessions.delete(ctx.from.id);
     } catch (err) {
         console.error('Contact error:', err);
