@@ -801,7 +801,7 @@ const KENO_PAYOUTS = {
 function drawKenoNumbers(gameNumber) {
     const numbers = [];
     const isDivisibleBy5 = gameNumber % 5 === 0;
-    if (isDivisibleBy5) numbers.push(66, 14);
+    if (isDivisibleBy5) numbers.push(66);
     while (numbers.length < 20) {
         const num = Math.floor(Math.random() * 80) + 1;
         if (!numbers.includes(num)) numbers.push(num);
@@ -1087,6 +1087,7 @@ bot.start(async (ctx) => {
     if (referralCode) sessions.set(ctx.from.id, { referral_code: referralCode, step: 'start' });
     ctx.reply(
         '🐎 HORSE RACING & KENO BET BOT\n\n' +
+        '📢 Join our channel for updates: @habeshakeno123\n\n' +
         '━━━━━━━━━━━━━━━━━━━━\n\n' +
         '🎰 Games Available:\n' +
         '• Keno - Pick 1-10 numbers, win up to 20,000x!\n\n' +
