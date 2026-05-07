@@ -548,6 +548,228 @@ app.post('/withdraw', async (req, res) => {
     }
 });
 
+
+
+
+
+
+
+
+// ============================================
+// WITHDRAWAL HISTORY ENDPOINTS (FIXED)
+// ============================================
+
+// Get withdrawal history for a specific user
+app.get('/withdrawal/history/:phone', async (req, res) => {
+    try {
+        const user = await pool.query('SELECT id FROM users WHERE phone = $1', [req.params.phone]);
+        if (user.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const history = await pool.query(
+            `SELECT id, amount, method, account, status, created_at 
+             FROM withdrawals 
+             WHERE user_id = $1 
+             ORDER BY created_at DESC 
+             LIMIT 50`,
+            [user.rows[0].id]
+        );
+        
+        console.log(`📋 Withdrawal history for ${req.params.phone}: ${history.rows.length} records`);
+        res.json(history.rows);
+    } catch (error) {
+        console.error('Withdrawal history error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get user's pending withdrawal
+app.get('/withdrawal/pending/:phone', async (req, res) => {
+    try {
+        const user = await pool.query('SELECT id FROM users WHERE phone = $1', [req.params.phone]);
+        if (user.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const pending = await pool.query(
+            `SELECT id, amount, method, account, status, created_at 
+             FROM withdrawals 
+             WHERE user_id = $1 AND status = 'pending' 
+             ORDER BY created_at DESC`,
+            [user.rows[0].id]
+        );
+        
+        res.json(pending.rows);
+    } catch (error) {
+        console.error('Pending withdrawal error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all withdrawals for admin
+app.get('/admin/withdrawals', async (req, res) => {
+    try {
+        const withdrawals = await pool.query(
+            `SELECT w.id, u.phone, w.amount, w.method, w.account, w.status, w.created_at 
+             FROM withdrawals w 
+             JOIN users u ON w.user_id = u.id 
+             ORDER BY w.created_at DESC 
+             LIMIT 100`
+        );
+        res.json(withdrawals.rows);
+    } catch (error) {
+        console.error('Admin withdrawals error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Approve or reject withdrawal
+app.post('/admin/approve-withdraw', async (req, res) => {
+    const { id, action } = req.body;
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+        
+        const withdrawal = await client.query(
+            'SELECT * FROM withdrawals WHERE id = $1 AND status = $2',
+            [id, 'pending']
+        );
+        
+        if (withdrawal.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Withdrawal not found or already processed' });
+        }
+        
+        let newStatus;
+        if (action === 'approve') {
+            newStatus = 'approved';
+        } else if (action === 'reject') {
+            newStatus = 'rejected';
+            // Refund money back to user if rejected
+            const userId = withdrawal.rows[0].user_id;
+            const amount = parseFloat(withdrawal.rows[0].amount);
+            
+            await client.query(
+                'UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2',
+                [amount, userId]
+            );
+            
+            // Send balance update
+            const user = await client.query('SELECT phone FROM users WHERE id = $1', [userId]);
+            if (user.rows.length > 0) {
+                await emitBalanceUpdate(user.rows[0].phone);
+            }
+        } else {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Invalid action' });
+        }
+        
+        await client.query(
+            'UPDATE withdrawals SET status = $1 WHERE id = $2',
+            [newStatus, id]
+        );
+        
+        await client.query('COMMIT');
+        res.json({ success: true, status: newStatus });
+        
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Approve withdraw error:', error);
+        res.status(500).json({ error: error.message });
+    } finally {
+        client.release();
+    }
+});
+
+// Withdraw endpoint (already exists, make sure it's correct)
+app.post('/withdraw', async (req, res) => {
+    const { phone, amount, method, account } = req.body;
+    
+    console.log(`💰 Withdrawal request: ${phone} - Amount: $${amount}`);
+    
+    if (!amount || amount < 1000) {
+        return res.status(400).json({ error: 'Minimum withdrawal is $1,000' });
+    }
+    if (amount > 25000) {
+        return res.status(400).json({ error: 'Maximum withdrawal per request is $25,000' });
+    }
+    
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        const user = await client.query('SELECT id, wallet_balance FROM users WHERE phone = $1 FOR UPDATE', [phone]);
+        if (user.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const currentBalance = parseFloat(user.rows[0].wallet_balance);
+        if (currentBalance < amount) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Insufficient balance' });
+        }
+        
+        const newBalance = currentBalance - amount;
+        await client.query('UPDATE users SET wallet_balance = $1 WHERE id = $2', [newBalance, user.rows[0].id]);
+        
+        await client.query(
+            `INSERT INTO withdrawals (user_id, amount, method, account, status, created_at) 
+             VALUES ($1, $2, $3, $4, 'pending', NOW())`,
+            [user.rows[0].id, amount, method || 'telebirr', account || '']
+        );
+        
+        await client.query('COMMIT');
+        
+        await emitBalanceUpdate(phone);
+        
+        res.json({ 
+            success: true, 
+            newBalance: newBalance, 
+            message: 'Withdrawal request submitted' 
+        });
+        
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Withdrawal error:', error);
+        res.status(500).json({ error: error.message });
+    } finally {
+        client.release();
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ============================================
 // KENO GAME - COMPLETELY FIXED
 // ============================================
@@ -1047,6 +1269,10 @@ if (process.env.NODE_ENV !== 'production') {
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+
+
+
 
 // ============================================
 // START SERVER
