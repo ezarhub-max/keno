@@ -388,6 +388,7 @@
         <div class="navbar-brand">
             <i class="fas fa-wallet"></i>
             <span>My Wallet</span>
+            
         </div>
         <a href="select.html" class="back-btn">
             <i class="fas fa-arrow-left"></i> Back
@@ -630,7 +631,7 @@
             const transactionId = document.getElementById('transactionId').value.trim();
             
             if (!amount || amount < 500) {
-                showToast('Please enter a valid amount (minimum $200)', true);
+                showToast('Please enter a valid amount (minimum $500)', true);
                 return;
             }
             
