@@ -814,29 +814,46 @@
         }
         
         async function loadWithdrawalHistory() {
-            try {
-                const response = await fetch(`/withdrawal/history/${userPhone}`);
-                const history = await response.json();
-                const container = document.getElementById('withdrawalHistory');
-                
-                if (!history || history.length === 0) {
-                    container.innerHTML = '<div class="text-center" style="color: rgba(255,255,255,0.5);">No withdrawal history</div>';
-                    return;
-                }
-                
-                container.innerHTML = history.map(w => `
-                    <div class="request-item" style="border-left-color: ${w.status === 'approved' ? '#28a745' : '#ffc107'}">
-                        <div class="d-flex justify-content-between">
-                            <span>💰 $${parseFloat(w.amount).toFixed(2)}</span>
-                            <span class="${w.status === 'approved' ? 'status-approved' : 'status-pending'}">${w.status === 'approved' ? '✅ Approved' : '⏳ Pending'}</span>
-                        </div>
-                        <div style="font-size:0.7rem;">📱 ${w.account || w.telebirr || 'N/A'} | ${new Date(w.created_at).toLocaleDateString()}</div>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('Withdrawal history error:', error);
-            }
+    try {
+        const response = await fetch(`/withdrawal/history/${userPhone}`);
+        const history = await response.json();
+        const container = document.getElementById('withdrawalHistory');
+        
+        if (!history || history.length === 0) {
+            container.innerHTML = '<div class="text-center" style="color: rgba(255,255,255,0.5);">No withdrawal history</div>';
+            return;
         }
+        
+        container.innerHTML = history.map(w => {
+            // Determine status display
+            let statusClass = 'status-pending';
+            let statusText = '⏳ Pending';
+            let statusColor = '#ffc107';
+            
+            if (w.status === 'approved' || w.status === 'paid') {
+                statusClass = 'status-approved';
+                statusText = '✅ Approved';
+                statusColor = '#28a745';
+            } else if (w.status === 'rejected') {
+                statusClass = 'status-pending';
+                statusText = '❌ Rejected';
+                statusColor = '#dc3545';
+            }
+            
+            return `
+                <div class="request-item" style="border-left-color: ${statusColor}">
+                    <div class="d-flex justify-content-between">
+                        <span>💰 $${parseFloat(w.amount).toFixed(2)}</span>
+                        <span class="${statusClass}">${statusText}</span>
+                    </div>
+                    <div style="font-size:0.7rem;">📱 ${w.account || w.telebirr || 'N/A'} | ${new Date(w.created_at).toLocaleDateString()}</div>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Withdrawal history error:', error);
+    }
+}
         
         async function refreshAll() {
             await Promise.all([
