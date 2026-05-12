@@ -1283,7 +1283,46 @@ process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
 
 
-
+app.get('/admin/force-create-user/:phone', async (req, res) => {
+    const phone = req.params.phone;
+    const password = req.query.password || 'admin123';
+    
+    if (password !== 'admin123') {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        // Delete any existing data for this phone
+        await client.query('DELETE FROM telegram_links WHERE phone = $1', [phone]);
+        await client.query('DELETE FROM users WHERE phone = $1', [phone]);
+        
+        // Create new user
+        const referralCode = `REF${phone.slice(-8)}${Math.floor(Math.random() * 10000)}`;
+        const result = await client.query(
+            `INSERT INTO users (phone, password, wallet_balance, referral_code, created_at) 
+             VALUES ($1, $2, $3, $4, NOW()) 
+             RETURNING *`,
+            [phone, 'telegram123', 0.00, referralCode]
+        );
+        
+        await client.query('COMMIT');
+        
+        res.json({ 
+            success: true, 
+            message: 'User created successfully',
+            user: result.rows[0]
+        });
+        
+    } catch (error) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: error.message });
+    } finally {
+        client.release();
+    }
+});
 
 
 
